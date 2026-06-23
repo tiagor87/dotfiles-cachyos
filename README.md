@@ -65,6 +65,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Shell | 2 | `shell/install/2-symlinks.sh` | Linka o `.zshrc` → `~/.zshrc` |
 | Shell | 3 | `shell/install/3-configure-zsh.sh` | **Config interativa** (via fzf): escolhe `ZSH_THEME` e os `plugins` e grava no `.zshrc` versionado. Pula sem TTY/fzf |
 | Dev | 1 | `dev/install/1-jetbrains-toolbox.sh` | Instala o **JetBrains Toolbox** (AUR) — gerencia Rider, IntelliJ, etc. |
+| Dev | 2 | `dev/install/2-docker-desktop.sh` | Instala o **Docker Desktop** (AUR) e **corrige o login**: gera chave GPG + `pass init` (o credential helper do Docker no Linux usa `pass`; sem isso o Sign in não persiste) |
 | Storage | 1 | `storage/install/1-windows-mounts.sh` | Monta **unidades Windows (NTFS via `ntfs3`)** escolhidas por fzf em `/mnt/<rótulo>` com `nofail` + `x-systemd.automount` (não quebra o boot/login se o disco falhar) + atalho humano `~/<rótulo>`; backup + validação do `/etc/fstab` |
 
 ---
