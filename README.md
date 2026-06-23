@@ -68,6 +68,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Dev | 1 | `dev/install/1-jetbrains-toolbox.sh` | Instala o **JetBrains Toolbox** (AUR) — gerencia Rider, IntelliJ, etc. |
 | Dev | 2 | `dev/install/2-docker-desktop.sh` | Instala o **Docker Desktop** (AUR) e **corrige o login**: gera chave GPG + `pass init` (o credential helper do Docker no Linux usa `pass`; sem isso o Sign in não persiste) |
 | Dev | 3 | `dev/install/3-cli-tools.sh` | Instala **bun** + **AWS CLI v2** (repo oficial) |
+| Dev | 4 | `dev/install/4-runtimes.sh` | Instala **Node.js** + **npm** e **.NET SDK** + **ASP.NET runtime** (repo oficial) |
 | Storage | 1 | `storage/install/1-windows-mounts.sh` | Monta **unidades Windows (NTFS via `ntfs3`)** escolhidas por fzf em `/mnt/<rótulo>` com `nofail` + `x-systemd.automount` (não quebra o boot/login se o disco falhar) + atalho humano `~/<rótulo>`; backup + validação do `/etc/fstab` |
 
 ---
@@ -107,15 +108,39 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **fzf** — fuzzy finder (`Ctrl+R` histórico, `Ctrl+T` arquivos, `Alt+C` cd) via plugin do OMZ
 - **zsh-autosuggestions** + **zsh-syntax-highlighting** (pacman) — sugestões e realce na linha de comando
 
+### Dev (via `pacman` + AUR)
+- **JetBrains Toolbox** (AUR) — gerencia Rider, IntelliJ, etc.
+- **Docker Desktop** (AUR) — autostart no login (serviço de usuário); login corrigido via `pass`/GPG
+- **bun** — runtime/toolkit JS
+- **AWS CLI v2** — `aws`
+- **Node.js** + **npm** — runtime JS
+- **.NET SDK** + **ASP.NET runtime** — desenvolvimento .NET (Rider)
+
+### Storage
+- **ntfs-3g** (tools) + driver **`ntfs3`** (kernel) — monta unidades Windows (NTFS) com `nofail`/automount; atalho `~/<rótulo>`
+
 ---
 
-## ⌨️ Atalhos do DMS (já no `config.kdl`)
+## ⌨️ Atalhos (já no `config.kdl`)
+
+**DMS:**
 
 | Atalho | Ação |
 |--------|------|
 | `Mod+Space` | App launcher (spotlight) |
 | `Mod+Shift+Space` | Histórico de clipboard |
 | `Mod+Shift+Escape` | Lista de processos |
+
+**niri (customizados):**
+
+| Atalho | Ação |
+|--------|------|
+| `Mod+T` / `Mod+Enter` | abre o terminal (kitty) |
+| `Mod+↑` / `Mod+↓` | navega foco (janela na coluna → transborda p/ workspace) |
+| `Mod+Shift+↑/↓` · `Mod+Ctrl+↑/↓` | move a janela entre workspaces |
+| `Mod+J` / `Mod+K` | foco de janela na coluna |
+
+**kitty:** `Shift+Enter` = nova linha (CSI u, p/ Claude Code/Herdr/nvim).
 
 > A barra sobe automaticamente no login via **`dms.service`** (serviço systemd de usuário, habilitado pelo `2-dms.sh`) — por isso o `spawn-at-startup` do DMS fica comentado no `config.kdl` (evita duplicar o shell). Settings do DMS: ícone de engrenagem na barra, ou `dms ipc call settings toggle`.
 
