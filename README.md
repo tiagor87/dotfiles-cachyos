@@ -63,6 +63,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Security | 2 | `security/install/2-symlinks.sh` | Linka `environment.d/10-ssh-agent.conf` (define `SSH_AUTH_SOCK` → gcr) |
 | Shell | 1 | `shell/install/1-zsh.sh` | Instala **zsh** + **fzf** + plugins (autosuggestions, syntax-highlighting), **Oh My Zsh** (unattended) e define o zsh como shell padrão (`chsh`) |
 | Shell | 2 | `shell/install/2-symlinks.sh` | Linka o `.zshrc` → `~/.zshrc` |
+| Shell | 3 | `shell/install/3-configure-zsh.sh` | **Config interativa** (via fzf): escolhe `ZSH_THEME` e os `plugins` e grava no `.zshrc` versionado. Pula sem TTY/fzf |
 | Dev | 1 | `dev/install/1-jetbrains-toolbox.sh` | Instala o **JetBrains Toolbox** (AUR) — gerencia Rider, IntelliJ, etc. |
 
 ---
@@ -98,7 +99,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **Herdr** (AUR `herdr-bin`) — multiplexer de coding agents (tmux para agentes). Tema `terminal` → herda a paleta do kitty (logo, as cores Material You do DMS) e a fonte do próprio kitty: muda junto com o wallpaper, sem config extra
 
 ### Shell (via `pacman` + script)
-- **zsh** + **Oh My Zsh** — shell padrão; `.zshrc` versionado (tema `robbyrussell`, plugins `git`/`fzf`/`sudo`)
+- **zsh** + **Oh My Zsh** — shell padrão; `.zshrc` versionado (tema `robbyrussell`, plugins `git`/`fzf`/`sudo`). Configurável por **fzf** no setup (`3-configure-zsh.sh`) — escolhe tema + plugins — ou editando o `.zshrc` direto
 - **fzf** — fuzzy finder (`Ctrl+R` histórico, `Ctrl+T` arquivos, `Alt+C` cd) via plugin do OMZ
 - **zsh-autosuggestions** + **zsh-syntax-highlighting** (pacman) — sugestões e realce na linha de comando
 
