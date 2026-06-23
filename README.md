@@ -53,7 +53,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Desktop | 2 | `desktop/install/2-dms.sh` | Instala o **DankMaterialShell** (`dms-shell`) + deps (matugen, wl-clipboard, cliphist, cava, qt6-multimedia, inter-font, ícones Material Symbols do AUR) e habilita o `dms.service` (autostart) |
 | Desktop | 3 | `desktop/install/3-sddm.sh` | Instala e habilita o **SDDM** + tema **sddm-astronaut-theme** (variante `purple_leaves`, AUR); copia a seleção do tema para `/etc/sddm.conf.d/` |
 | Desktop | 4 | `desktop/install/4-symlinks.sh` | **Linka os configs** do repo: `config.kdl` → `~/.config/niri/` e `settings.json` → `~/.config/DankMaterialShell/`; cria stubs dos `include`s auto-gerados e valida o config do niri |
-| Desktop | 5 | `desktop/install/5-wallpapers.sh` | Monta a **biblioteca de wallpapers** (`~/<Pictures>/Wallpapers`) p/ o DMS: vincula a coleção local do CachyOS; coleção Catppuccin é opt-in (`DOTFILES_WALLPAPERS_FETCH=1`) |
+| Desktop | 5 | `desktop/install/5-wallpapers.sh` | Monta a **biblioteca de wallpapers** em **pasta única** (`~/<Pictures>/Wallpapers`, prefixo por coleção) p/ a ciclagem do DMS percorrer tudo: copia a coleção local do CachyOS; coleções de anime/games/Catppuccin são opt-in (`DOTFILES_WALLPAPERS_FETCH=1`) |
 | Terminal | 1 | `terminal/install/1-kitty.sh` | Instala o **kitty** + **JetBrainsMono Nerd Font** |
 | Terminal | 2 | `terminal/install/2-herdr.sh` | Instala o **Herdr** (multiplexer de coding agents) via AUR |
 | Terminal | 3 | `terminal/install/3-symlinks.sh` | Linka `kitty.conf`/`theme.conf` → `~/.config/kitty/` e `herdr/config.toml` → `~/.config/herdr/`; valida a config do kitty |
