@@ -61,6 +61,8 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Boot | 2 | `boot/install/2-plymouth.sh` | Instala o tema **Plymouth Catppuccin Mocha** (splash de boot) e reconstrói o initramfs |
 | Security | 1 | `security/install/1-gnome-keyring.sh` | Instala **gnome-keyring** + seahorse, habilita o `gcr-ssh-agent.socket` e integra o git (`credential.helper=libsecret`) |
 | Security | 2 | `security/install/2-symlinks.sh` | Linka `environment.d/10-ssh-agent.conf` (define `SSH_AUTH_SOCK` → gcr) |
+| Shell | 1 | `shell/install/1-zsh.sh` | Instala **zsh** + **fzf** + plugins (autosuggestions, syntax-highlighting), **Oh My Zsh** (unattended) e define o zsh como shell padrão (`chsh`) |
+| Shell | 2 | `shell/install/2-symlinks.sh` | Linka o `.zshrc` → `~/.zshrc` |
 
 ---
 
@@ -90,9 +92,14 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **auto-resync do wallpaper**: o path unit `dms-greeter-resync.path` (systemd user) observa o `session.json` do DMS e roda `dms greeter sync` quando você troca o wallpaper — o login acompanha o desktop sozinho
 
 ### Terminal (via `pacman`)
-- **kitty** — terminal GPU com **animações de cursor** (rastro/trail, beam, piscada com easing, cursor oco ao desfocar). Tema **Catppuccin Mocha** como fallback, sobrescrito por cores **Material You dinâmicas** geradas pelo DMS (`dank-theme.conf`/`dank-tabs.conf` via matugen) que acompanham o wallpaper. Terminal padrão do niri (`Mod+T`)
+- **kitty** — terminal GPU com **animações de cursor** (rastro/trail, beam, piscada com easing, cursor oco ao desfocar). Tema **Catppuccin Mocha** como fallback, sobrescrito por cores **Material You dinâmicas** geradas pelo DMS (`dank-theme.conf`/`dank-tabs.conf` via matugen) que acompanham o wallpaper. Terminal padrão do niri (`Mod+T` **e `Mod+Enter`**). `Shift+Enter` = nova linha (CSI u, p/ Claude Code/Herdr/nvim)
 - **JetBrainsMono Nerd Font** — fonte com ícones/ligaduras
 - **Herdr** (AUR `herdr-bin`) — multiplexer de coding agents (tmux para agentes). Tema `terminal` → herda a paleta do kitty (logo, as cores Material You do DMS) e a fonte do próprio kitty: muda junto com o wallpaper, sem config extra
+
+### Shell (via `pacman` + script)
+- **zsh** + **Oh My Zsh** — shell padrão; `.zshrc` versionado (tema `robbyrussell`, plugins `git`/`fzf`/`sudo`)
+- **fzf** — fuzzy finder (`Ctrl+R` histórico, `Ctrl+T` arquivos, `Alt+C` cd) via plugin do OMZ
+- **zsh-autosuggestions** + **zsh-syntax-highlighting** (pacman) — sugestões e realce na linha de comando
 
 ---
 
@@ -128,9 +135,12 @@ dotfiles-cachyos/
 ├── boot/                         # categoria Boot
 │   ├── install/                  # 1-limine-theme 2-plymouth
 │   └── limine/catppuccin-mocha.conf
-└── security/                     # categoria Security
-    ├── install/                  # 1-gnome-keyring 2-symlinks
-    └── environment.d/10-ssh-agent.conf  # → ~/.config/environment.d/
+├── security/                     # categoria Security
+│   ├── install/                  # 1-gnome-keyring 2-symlinks
+│   └── environment.d/10-ssh-agent.conf  # → ~/.config/environment.d/
+└── shell/                        # categoria Shell
+    ├── install/                  # 1-zsh 2-symlinks
+    └── zsh/.zshrc                # → ~/.zshrc
 ```
 
 > 🔁 Os configs versionados são **linkados** (symlink) para suas localizações reais pelo `4-symlinks.sh` — editar o arquivo no repo reflete na hora no sistema. Os arquivos `~/.config/niri/dms/*.kdl` são **auto-gerados** pelo DMS (cores, layout etc.) e por isso **não** são versionados.
