@@ -71,6 +71,8 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Dev | 3 | `dev/install/3-cli-tools.sh` | Instala **bun** + **AWS CLI v2** (repo oficial) |
 | Dev | 4 | `dev/install/4-runtimes.sh` | Instala **Node.js** + **npm** e **.NET SDK** + **ASP.NET runtime** (repo oficial) |
 | Dev | 5 | `dev/install/5-claude-code.sh` | Instala o **Claude Code** (+ jq), liga o `CLAUDE.md` global e a função `c` de **perfis isolados** (`CLAUDE_CONFIG_DIR` por perfil) ao `.zshrc`; seed do perfil `default` |
+| Dev | 6 | `dev/install/6-claude-profiles.sh` | **Pergunta os perfis** do Claude Code durante a instalação (cria/edita em `~/.claude_profiles.json`, com `CLAUDE.md` linkado por perfil) |
+| Dev | 7 | `dev/install/7-headroom.sh` | Instala o **Headroom** (compressão de contexto, via `uv tool`) e aplica `headroom wrap claude` (**global** — todos os perfis) |
 | Storage | 1 | `storage/install/1-windows-mounts.sh` | Monta **unidades Windows (NTFS via `ntfs3`)** escolhidas por fzf em `/mnt/<rótulo>` com `nofail` + `x-systemd.automount` (não quebra o boot/login se o disco falhar) + atalho humano `~/<rótulo>`; backup + validação do `/etc/fstab` |
 
 ---
@@ -117,7 +119,8 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **AWS CLI v2** — `aws`
 - **Node.js** + **npm** — runtime JS
 - **.NET SDK** + **ASP.NET runtime** — desenvolvimento .NET (Rider)
-- **Claude Code** (`claude`) — com **perfis isolados**: a função `c` lê `~/.claude_profiles.json` (`{ "Nome": { "WorkDir": ... } }`), define `CLAUDE_CONFIG_DIR` por perfil (config/login isolados) e roda na pasta atual. `c` (seletor) · `c add <nome> [dir]` · `c ls` · `c rm <nome>`. `CLAUDE.md` global versionado em `dev/claude/`
+- **Claude Code** (`claude`) — com **perfis isolados**: a função `c` lê `~/.claude_profiles.json` (`{ "Nome": { "WorkDir": ... } }`), define `CLAUDE_CONFIG_DIR` por perfil (config/login isolados) e roda na pasta atual. `c` (seletor) · `c add <nome> [dir]` · `c ls` · `c rm <nome>`. `CLAUDE.md` global versionado em `dev/claude/`. Os perfis são perguntados no setup (`6-claude-profiles.sh`)
+- **Headroom** (`headroom-ai`, via `uv tool`) — compressão de contexto p/ o Claude Code; `headroom wrap claude` (global, todos os perfis)
 
 ### Storage
 - **ntfs-3g** (tools) + driver **`ntfs3`** (kernel) — monta unidades Windows (NTFS) com `nofail`/automount; atalho `~/<rótulo>`
