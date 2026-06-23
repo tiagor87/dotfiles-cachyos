@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# 2-plymouth.sh — Splash de boot (Plymouth) com tema square_hud (adi1090x)
+# 2-plymouth.sh — Splash de boot (Plymouth) com tema darth_vader (adi1090x)
 set -uo pipefail
 source "${DOTFILES_ROOT:?}/lib/install-helpers.sh"
 
 # O Plymouth e o hook do mkinitcpio já vêm no CachyOS; só trocamos o tema.
-aur_install plymouth-theme-square-hud-git
+aur_install plymouth-theme-darth-vader-git
 
-# Descobre o nome do tema instalado (square_hud) sem hardcode frágil.
+# Descobre o nome do tema instalado (darth_vader) sem hardcode frágil.
 theme=""
-for d in /usr/share/plymouth/themes/*square*hud* /usr/share/plymouth/themes/*square*; do
+for d in /usr/share/plymouth/themes/*darth*vader* /usr/share/plymouth/themes/*vader*; do
     [[ -d $d ]] && { theme=$(basename "$d"); break; }
 done
 
 if [[ -z $theme ]]; then
-    c_warn "Tema square-hud não encontrado em /usr/share/plymouth/themes/."
+    c_warn "Tema darth-vader não encontrado em /usr/share/plymouth/themes/."
     log_entry config plymouth failed "tema não instalado"
     return 0 2>/dev/null || exit 0
 fi
