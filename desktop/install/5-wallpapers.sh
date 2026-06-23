@@ -30,22 +30,31 @@ if [[ -d $CACHY ]]; then
     fi
 fi
 
-# --- Coleção Catppuccin (curada) — OPT-IN (download ~363MB). -------------------
-CATPP="$LIB/catppuccin"
+# --- Coleções remotas (clone shallow) — OPT-IN (download grande). -------------
+# Formato: "subpasta|repo github|nota"
+COLLECTIONS=(
+    "catppuccin|zhichaoh/catppuccin-wallpapers|Catppuccin curado (~363MB)"
+    "anime|port19x/wallpapers|anime (~46MB)"
+    "aesthetic|D3Ext/aesthetic-wallpapers|anime + games + aesthetic (~629MB)"
+)
 if [[ ${DOTFILES_WALLPAPERS_FETCH:-0} == 1 ]]; then
-    if [[ -d $CATPP/.git ]]; then
-        pkg_status "coleção: catppuccin" "= já clonada" "$C_DIM"
-        log_entry wallpaper catppuccin skipped "$CATPP"
-    elif git clone --depth 1 https://github.com/zhichaoh/catppuccin-wallpapers "$CATPP" >/dev/null 2>&1; then
-        n=$(find "$CATPP" -type f \( -iname '*.jpg' -o -iname '*.png' -o -iname '*.webp' \) 2>/dev/null | wc -l)
-        pkg_status "coleção: catppuccin" "✓ clonada ($n imagens)" "$C_GREEN"
-        log_entry wallpaper catppuccin configured "$CATPP ($n imagens)"
-    else
-        pkg_status "coleção: catppuccin" "✗ falhou (sem rede?)" "$C_RED"
-        log_entry wallpaper catppuccin failed "git clone falhou"
-    fi
+    for entry in "${COLLECTIONS[@]}"; do
+        IFS='|' read -r name repo note <<<"$entry"
+        dest="$LIB/$name"
+        if [[ -d $dest/.git ]]; then
+            pkg_status "coleção: $name" "= já clonada" "$C_DIM"
+            log_entry wallpaper "$name" skipped "$dest"
+        elif git clone --depth 1 "https://github.com/$repo" "$dest" >/dev/null 2>&1; then
+            n=$(find "$dest" -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) 2>/dev/null | wc -l)
+            pkg_status "coleção: $name" "✓ clonada ($n imagens)" "$C_GREEN"
+            log_entry wallpaper "$name" configured "$repo → $dest ($n imagens)"
+        else
+            pkg_status "coleção: $name" "✗ falhou (sem rede?)" "$C_RED"
+            log_entry wallpaper "$name" failed "git clone $repo falhou"
+        fi
+    done
 else
-    c_info "Coleção Catppuccin não baixada (opt-in). Para incluir:"
+    c_info "Coleções extras (anime/games/Catppuccin) não baixadas (opt-in). Para incluir:"
     c_info "  DOTFILES_WALLPAPERS_FETCH=1 bash desktop/install/5-wallpapers.sh"
 fi
 
