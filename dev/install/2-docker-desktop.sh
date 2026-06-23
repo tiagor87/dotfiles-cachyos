@@ -11,6 +11,10 @@ source "${DOTFILES_ROOT:?}/lib/install-helpers.sh"
 aur_install docker-desktop
 repo_install pass gnupg   # backend de credenciais do Docker Desktop
 
+# Autostart no login (serviço systemd de usuário). O pacote já costuma vir
+# enabled; garantimos de forma idempotente.
+enable_user_service docker-desktop.service
+
 # 1) Chave GPG (o pass precisa de uma chave de criptografia). Sem passphrase
 #    para o helper salvar/ler o token sem prompt a cada login.
 keyid=$(gpg --list-secret-keys --with-colons 2>/dev/null | awk -F: '/^sec:/{print $5; exit}')
