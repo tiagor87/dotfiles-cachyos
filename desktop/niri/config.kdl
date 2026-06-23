@@ -649,3 +649,5 @@ binds {
 // <<< DMS
 
 include "dms/windowrules.kdl"
+
+include "dms/outputs.kdl"
