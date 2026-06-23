@@ -92,10 +92,15 @@ aur_install() {
         done
         return
     fi
+    # Prima o sudo com prompt VISÍVEL antes de chamar o yay/paru. Builds do AUR
+    # (makepkg) são interativos/longos — NÃO redirecionamos a saída, senão o
+    # prompt de senha some e a instalação parece travada.
+    sudo -v || { c_err "sudo recusado — abortando instalação do AUR."; return 1; }
     local pkg before after
     for pkg in "$@"; do
         before=$(pkg_version "$pkg")
-        "$helper" -S --needed --noconfirm "$pkg" >/dev/null 2>&1
+        c_info "AUR: compilando/instalando $pkg via $helper (mostra a saída; pode demorar)..."
+        "$helper" -S --needed --noconfirm "$pkg"
         after=$(pkg_version "$pkg")
         if [[ -z $after ]]; then
             pkg_status "$pkg" "✗ falhou" "$C_RED"
