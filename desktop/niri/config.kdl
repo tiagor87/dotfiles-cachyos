@@ -408,9 +408,10 @@ binds {
 
     Mod+Left  { focus-column-left; }
     Mod+Right { focus-column-right; }
-    // Mod+↑/↓ navegam entre workspaces; foco de janela na coluna fica em Mod+J/K.
-    Mod+Down  { focus-workspace-down; }
-    Mod+Up    { focus-workspace-up; }
+    // Mod+↑/↓ movem o foco entre janelas da coluna e transbordam para o
+    // workspace de cima/baixo ao chegar na borda.
+    Mod+Down  { focus-window-or-workspace-down; }
+    Mod+Up    { focus-window-or-workspace-up; }
     Mod+H     { focus-column-left; }
     Mod+J     { focus-window-down; }
     Mod+K     { focus-window-up; }
