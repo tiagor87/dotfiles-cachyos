@@ -111,6 +111,10 @@ input {
 // descritivo (segue o monitor físico, independe da porta). Para outro monitor
 // portrait, adicione um bloco igual com o nome dele (veja `niri msg outputs`).
 output "PNP(SUE) SFV2701G 0x00000001" {
+    // Mantém o portrait (270°) e a alta taxa de atualização — declarar o bloco
+    // sem estes campos faria o niri resetar para os defaults (normal / preferido).
+    transform "270"
+    mode "2560x1440@164.998"
     layout {
         default-column-width { proportion 1.0; }
     }
