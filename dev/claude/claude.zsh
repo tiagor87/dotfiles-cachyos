@@ -66,5 +66,16 @@ c() {
     print -P "\n%F{cyan}### ${sel:u} ENVIRONMENT ###%f"
     print -P "%F{cyan}📌 Perfil:%f $sel   %F{8}⚙ CLAUDE_CONFIG_DIR=$wd%f\n"
 
-    CLAUDE_CONFIG_DIR="$wd" HONCHO_WORKSPACE_ID="$wsid" claude ${=args}
+    # Se o Headroom estiver instalado, lança via `headroom wrap claude` (sobe o
+    # proxy de compressão e roteia a API) — vale para qualquer perfil. Senão,
+    # roda o claude direto. CLAUDE_CONFIG_DIR isola config/login por perfil.
+    if command -v headroom >/dev/null 2>&1; then
+        if [[ -n $args ]]; then
+            CLAUDE_CONFIG_DIR="$wd" HONCHO_WORKSPACE_ID="$wsid" headroom wrap claude -- ${=args}
+        else
+            CLAUDE_CONFIG_DIR="$wd" HONCHO_WORKSPACE_ID="$wsid" headroom wrap claude
+        fi
+    else
+        CLAUDE_CONFIG_DIR="$wd" HONCHO_WORKSPACE_ID="$wsid" claude ${=args}
+    fi
 }

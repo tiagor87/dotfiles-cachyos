@@ -33,3 +33,6 @@ alias grep='grep --color=auto'
 
 # Claude Code com perfis isolados (função c)
 [[ -r ~/.config/claude/claude.zsh ]] && source ~/.config/claude/claude.zsh
+
+# ~/.local/bin no PATH (uv tools, headroom wrap)
+export PATH="$HOME/.local/bin:$PATH"

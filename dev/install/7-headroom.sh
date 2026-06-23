@@ -31,14 +31,9 @@ else
     return 0 2>/dev/null || exit 0
 fi
 
-# Wrap global do claude (cobre todos os perfis automaticamente).
-if command -v headroom >/dev/null 2>&1; then
-    if headroom wrap claude >/dev/null 2>&1; then
-        pkg_status "headroom wrap claude" "✓ global (todos os perfis)" "$C_GREEN"
-        log_entry dev "headroom wrap" configured "claude (global)"
-    else
-        pkg_status "headroom wrap claude" "! rode manual: headroom wrap claude" "$C_YELLOW"
-        log_entry dev "headroom wrap" failed "headroom wrap claude"
-    fi
-fi
-c_info "Wrap é global: vale para 'c' em qualquer perfil. Abra um novo shell p/ o PATH valer."
+# IMPORTANTE: `headroom wrap claude` NÃO é um passo de setup — ele sobe o proxy
+# e LANÇA o Claude Code na hora (rodá-lo aqui faz o claude abrir sem stdin e
+# falhar). A integração fica na função `c`: ela lança via `headroom wrap claude`
+# (com o CLAUDE_CONFIG_DIR do perfil), então TODO perfil roteia pelo Headroom.
+c_info "Integração via função 'c' (headroom wrap claude por perfil). Abra um novo shell p/ o PATH valer."
+c_info "Testar à mão:  headroom wrap claude     |  diagnóstico:  headroom doctor"
