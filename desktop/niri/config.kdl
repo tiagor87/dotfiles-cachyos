@@ -106,6 +106,16 @@ input {
     position x=1280 y=0
 }
 
+// Monitores em PORTRAIT: largura padrão das colunas = 100% (tela cheia).
+// Override de layout por-output (niri >= 25.x). Identificados pelo nome
+// descritivo (segue o monitor físico, independe da porta). Para outro monitor
+// portrait, adicione um bloco igual com o nome dele (veja `niri msg outputs`).
+output "PNP(SUE) SFV2701G 0x00000001" {
+    layout {
+        default-column-width { proportion 1.0; }
+    }
+}
+
 // Settings that influence how windows are positioned and sized.
 // Find more information on the wiki:
 // https://niri-wm.github.io/niri/Configuration:-Layout
