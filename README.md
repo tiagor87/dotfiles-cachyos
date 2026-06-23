@@ -63,6 +63,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Security | 2 | `security/install/2-symlinks.sh` | Linka `environment.d/10-ssh-agent.conf` (define `SSH_AUTH_SOCK` → gcr) |
 | Shell | 1 | `shell/install/1-zsh.sh` | Instala **zsh** + **fzf** + plugins (autosuggestions, syntax-highlighting), **Oh My Zsh** (unattended) e define o zsh como shell padrão (`chsh`) |
 | Shell | 2 | `shell/install/2-symlinks.sh` | Linka o `.zshrc` → `~/.zshrc` |
+| Dev | 1 | `dev/install/1-jetbrains-toolbox.sh` | Instala o **JetBrains Toolbox** (AUR) — gerencia Rider, IntelliJ, etc. |
 
 ---
 
@@ -138,9 +139,11 @@ dotfiles-cachyos/
 ├── security/                     # categoria Security
 │   ├── install/                  # 1-gnome-keyring 2-symlinks
 │   └── environment.d/10-ssh-agent.conf  # → ~/.config/environment.d/
-└── shell/                        # categoria Shell
-    ├── install/                  # 1-zsh 2-symlinks
-    └── zsh/.zshrc                # → ~/.zshrc
+├── shell/                        # categoria Shell
+│   ├── install/                  # 1-zsh 2-symlinks
+│   └── zsh/.zshrc                # → ~/.zshrc
+└── dev/                          # categoria Dev
+    └── install/                  # 1-jetbrains-toolbox
 ```
 
 > 🔁 Os configs versionados são **linkados** (symlink) para suas localizações reais pelo `4-symlinks.sh` — editar o arquivo no repo reflete na hora no sistema. Os arquivos `~/.config/niri/dms/*.kdl` são **auto-gerados** pelo DMS (cores, layout etc.) e por isso **não** são versionados.

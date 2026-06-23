@@ -26,6 +26,7 @@ CATEGORIES=(
     "Boot|Plymouth (splash) + tema do Limine — Catppuccin Mocha|boot/install"
     "Security|gnome-keyring (Secret Service + agente SSH, auto-unlock)|security/install"
     "Shell|zsh + Oh My Zsh + fzf|shell/install"
+    "Dev|JetBrains Toolbox|dev/install"
 )
 
 # Só scripts numerados (N-*.sh) entram no pipeline, em ordem numérica.
