@@ -65,6 +65,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Shell | 2 | `shell/install/2-symlinks.sh` | Linka o `.zshrc` → `~/.zshrc` |
 | Shell | 3 | `shell/install/3-configure-zsh.sh` | **Config interativa** (via fzf): escolhe `ZSH_THEME` e os `plugins` e grava no `.zshrc` versionado. Pula sem TTY/fzf |
 | Dev | 1 | `dev/install/1-jetbrains-toolbox.sh` | Instala o **JetBrains Toolbox** (AUR) — gerencia Rider, IntelliJ, etc. |
+| Storage | 1 | `storage/install/1-windows-mounts.sh` | Monta **unidades Windows (NTFS via `ntfs3`)** escolhidas por fzf, com `nofail` + `x-systemd.automount` (não quebra o boot/login se o disco falhar); backup + validação do `/etc/fstab` |
 
 ---
 
@@ -143,8 +144,10 @@ dotfiles-cachyos/
 ├── shell/                        # categoria Shell
 │   ├── install/                  # 1-zsh 2-symlinks
 │   └── zsh/.zshrc                # → ~/.zshrc
-└── dev/                          # categoria Dev
-    └── install/                  # 1-jetbrains-toolbox
+├── dev/                          # categoria Dev
+│   └── install/                  # 1-jetbrains-toolbox
+└── storage/                      # categoria Storage
+    └── install/                  # 1-windows-mounts (NTFS/ntfs3, nofail)
 ```
 
 > 🔁 Os configs versionados são **linkados** (symlink) para suas localizações reais pelo `4-symlinks.sh` — editar o arquivo no repo reflete na hora no sistema. Os arquivos `~/.config/niri/dms/*.kdl` são **auto-gerados** pelo DMS (cores, layout etc.) e por isso **não** são versionados.

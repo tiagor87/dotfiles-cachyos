@@ -4,7 +4,7 @@
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="robbyrussell"
 # fzf: o plugin do OMZ já carrega os keybindings (Ctrl+R, Ctrl+T, Alt+C).
-plugins=(git fzf sudo)
+plugins=(git fzf sudo z docker docker-compose npm node gh dotnet colored-man-pages extract history web-search systemd command-not-found)
 [[ -r "$ZSH/oh-my-zsh.sh" ]] && source "$ZSH/oh-my-zsh.sh"
 
 # ─── Plugins via pacman (Arch) — syntax-highlighting deve vir por ÚLTIMO ──────

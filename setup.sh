@@ -27,6 +27,7 @@ CATEGORIES=(
     "Security|gnome-keyring (Secret Service + agente SSH, auto-unlock)|security/install"
     "Shell|zsh + Oh My Zsh + fzf|shell/install"
     "Dev|JetBrains Toolbox|dev/install"
+    "Storage|Monta unidades Windows (NTFS/ntfs3) com nofail|storage/install"
 )
 
 # Só scripts numerados (N-*.sh) entram no pipeline, em ordem numérica.
