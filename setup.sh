@@ -24,6 +24,7 @@ CATEGORIES=(
     "Desktop|niri (WM) + DankMaterialShell + SDDM|desktop/install"
     "Terminal|kitty (animações de cursor + cores Material You) + Herdr|terminal/install"
     "Boot|Plymouth (splash) + tema do Limine — Catppuccin Mocha|boot/install"
+    "Security|gnome-keyring (Secret Service + agente SSH, auto-unlock)|security/install"
 )
 
 # Só scripts numerados (N-*.sh) entram no pipeline, em ordem numérica.
