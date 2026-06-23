@@ -56,7 +56,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Terminal | 1 | `terminal/install/1-kitty.sh` | Instala o **kitty** + **JetBrainsMono Nerd Font** |
 | Terminal | 2 | `terminal/install/2-herdr.sh` | Instala o **Herdr** (multiplexer de coding agents) via AUR |
 | Terminal | 3 | `terminal/install/3-symlinks.sh` | Linka `kitty.conf`/`theme.conf` → `~/.config/kitty/` e `herdr/config.toml` → `~/.config/herdr/`; valida a config do kitty |
-| Boot | 1 | `boot/install/1-limine-theme.sh` | Aplica a paleta **Catppuccin Mocha** no `/boot/limine.conf` (bootloader), com backup *(em construção — requer ver o limine.conf)* |
+| Boot | 1 | `boot/install/1-limine-theme.sh` | Garante a paleta **Catppuccin Mocha** no `/boot/limine.conf` (idempotente, backup + checagem de sanidade das entradas; preserva o wallpaper/splash) |
 | Boot | 2 | `boot/install/2-plymouth.sh` | Instala o tema **Plymouth Catppuccin Mocha** (splash de boot) e reconstrói o initramfs |
 
 ---
