@@ -81,7 +81,7 @@ cat <<'EOF'
 
 Wallpaper dinâmico: o greeter mostra o wallpaper atual após `dms greeter sync`.
 Para re-sincronizar AUTOMATICAMENTE ao trocar de wallpaper, habilite o plugin
-WallpaperWatcherDaemon nas settings do DMS apontando para um script que rode:
-    dms greeter sync -y
+WallpaperWatcherDaemon nas settings do DMS e aponte o "Script Path" para:
+    ~/.config/DankMaterialShell/greeter-resync.sh
 ──────────────────────────────────────────────────────────────────────
 EOF

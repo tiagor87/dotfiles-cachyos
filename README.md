@@ -35,7 +35,7 @@ A instalação de pacotes **e a criação dos symlinks** mostra uma linha por it
 
 ```
   → niri                                     ✓ 25.05.1-1
-  → alacritty                                = já instalado (0.15.1-1)
+  → fuzzel                                   = já instalado (1.12.1-1)
   → dms-shell                                ↑ 0.9.0 → 0.9.2
   → niri config.kdl                          ✓ vinculado
   → sddm.service                             ⚙ habilitado
@@ -49,7 +49,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 
 | Categoria | # | Script | Responsabilidade |
 |-----------|---|--------|------------------|
-| Desktop | 1 | `desktop/install/1-niri.sh` | Instala o **niri** + utilitários da sessão (alacritty, fuzzel, swaylock, swaybg, playerctl, brightnessctl, xwayland-satellite, portais XDG) |
+| Desktop | 1 | `desktop/install/1-niri.sh` | Instala o **niri** + utilitários da sessão (fuzzel, swaylock, swaybg, playerctl, brightnessctl, xwayland-satellite, portais XDG) |
 | Desktop | 2 | `desktop/install/2-dms.sh` | Instala o **DankMaterialShell** (`dms-shell`) + deps (matugen, wl-clipboard, cliphist, cava, qt6-multimedia, inter-font, ícones Material Symbols do AUR) e habilita o `dms.service` (autostart) |
 | Desktop | 3 | `desktop/install/3-greeter.sh` | Login via **greeter do DMS** (greetd): `dms greeter install` (substitui o SDDM) + `sync` (wallpaper dinâmico); adiciona `pam_gnome_keyring` ao `/etc/pam.d/greetd` (auto-unlock) e confirma numlock. ⚠️ crítico de login |
 | Desktop | 4 | `desktop/install/4-symlinks.sh` | **Linka os configs** do repo: `config.kdl` → `~/.config/niri/` e `settings.json` → `~/.config/DankMaterialShell/`; cria stubs dos `include`s auto-gerados e valida o config do niri |

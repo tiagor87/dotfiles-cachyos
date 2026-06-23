@@ -15,6 +15,11 @@ symlink "$HOME/.config/DankMaterialShell/settings.json" \
         "$DOTFILES_ROOT/desktop/dms/settings.json" \
         "DMS settings.json"
 
+# DMS: script de auto-resync do greeter (usado pelo WallpaperWatcherDaemon).
+symlink "$HOME/.config/DankMaterialShell/greeter-resync.sh" \
+        "$DOTFILES_ROOT/desktop/dms/greeter-resync.sh" \
+        "DMS greeter-resync.sh"
+
 # O niri resolve `include "dms/..."` relativo à pasta do config (~/.config/niri/).
 # Esses arquivos são AUTO-GERADOS pelo DMS e por isso NÃO são versionados. Numa
 # máquina nova eles ainda não existem quando o niri sobe, o que invalidaria o
