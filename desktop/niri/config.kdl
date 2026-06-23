@@ -106,19 +106,10 @@ input {
     position x=1280 y=0
 }
 
-// Monitores em PORTRAIT: largura padrão das colunas = 100% (tela cheia).
-// Override de layout por-output (niri >= 25.x). Identificados pelo nome
-// descritivo (segue o monitor físico, independe da porta). Para outro monitor
-// portrait, adicione um bloco igual com o nome dele (veja `niri msg outputs`).
-output "PNP(SUE) SFV2701G 0x00000001" {
-    // Mantém o portrait (270°) e a alta taxa de atualização — declarar o bloco
-    // sem estes campos faria o niri resetar para os defaults (normal / preferido).
-    transform "270"
-    mode "2560x1440@164.998"
-    layout {
-        default-column-width { proportion 1.0; }
-    }
-}
+// Configuração dos monitores (resolução/refresh máximos, transform, posição e
+// layout 100% em portrait) é GERADA pelo desktop/install/0-monitors.sh em
+// ~/.config/niri/outputs.kdl. Rode aquele script para (re)configurar.
+include "outputs.kdl"
 
 // Settings that influence how windows are positioned and sized.
 // Find more information on the wiki:
