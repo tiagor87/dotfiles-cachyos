@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 2-symlinks.sh — Linka os configs do kitty para ~/.config/kitty/
+# 3-symlinks.sh — Linka os configs do kitty e do Herdr
 set -uo pipefail
 source "${DOTFILES_ROOT:?}/lib/install-helpers.sh"
 
@@ -13,6 +13,11 @@ symlink "$HOME/.config/kitty/kitty.conf" \
 symlink "$HOME/.config/kitty/theme.conf" \
         "$DOTFILES_ROOT/terminal/kitty/theme.conf" \
         "kitty theme.conf"
+
+# Herdr: herda fonte/cores do kitty via tema "terminal".
+symlink "$HOME/.config/herdr/config.toml" \
+        "$DOTFILES_ROOT/terminal/herdr/config.toml" \
+        "herdr config.toml"
 
 # Valida a config (kitty +runpy lê e reporta erros sem abrir janela).
 if command -v kitty >/dev/null 2>&1; then

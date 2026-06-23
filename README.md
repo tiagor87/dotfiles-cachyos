@@ -54,7 +54,8 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Desktop | 3 | `desktop/install/3-sddm.sh` | Instala e habilita o **SDDM** no boot; avisa se outro display manager já estiver ativo |
 | Desktop | 4 | `desktop/install/4-symlinks.sh` | **Linka os configs** do repo: `config.kdl` → `~/.config/niri/` e `settings.json` → `~/.config/DankMaterialShell/`; cria stubs dos `include`s auto-gerados e valida o config do niri |
 | Terminal | 1 | `terminal/install/1-kitty.sh` | Instala o **kitty** + **JetBrainsMono Nerd Font** |
-| Terminal | 2 | `terminal/install/2-symlinks.sh` | Linka `kitty.conf` e `theme.conf` para `~/.config/kitty/` e valida a config |
+| Terminal | 2 | `terminal/install/2-herdr.sh` | Instala o **Herdr** (multiplexer de coding agents) via AUR |
+| Terminal | 3 | `terminal/install/3-symlinks.sh` | Linka `kitty.conf`/`theme.conf` → `~/.config/kitty/` e `herdr/config.toml` → `~/.config/herdr/`; valida a config do kitty |
 
 ---
 
@@ -84,6 +85,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 ### Terminal (via `pacman`)
 - **kitty** — terminal GPU com **animações de cursor** (rastro/trail, beam, piscada com easing, cursor oco ao desfocar). Tema **Catppuccin Mocha** como fallback, sobrescrito por cores **Material You dinâmicas** geradas pelo DMS (`dank-theme.conf`/`dank-tabs.conf` via matugen) que acompanham o wallpaper. Terminal padrão do niri (`Mod+T`)
 - **JetBrainsMono Nerd Font** — fonte com ícones/ligaduras
+- **Herdr** (AUR `herdr-bin`) — multiplexer de coding agents (tmux para agentes). Tema `terminal` → herda a paleta do kitty (logo, as cores Material You do DMS) e a fonte do próprio kitty: muda junto com o wallpaper, sem config extra
 
 ---
 
@@ -119,10 +121,13 @@ dotfiles-cachyos/
 └── terminal/
     ├── install/
     │   ├── 1-kitty.sh        # instala kitty + nerd font
-    │   └── 2-symlinks.sh     # linka os configs do kitty
-    └── kitty/
-        ├── kitty.conf        # → ~/.config/kitty/kitty.conf
-        └── theme.conf        # → ~/.config/kitty/theme.conf (fallback estático)
+    │   ├── 2-herdr.sh        # instala Herdr (AUR)
+    │   └── 3-symlinks.sh     # linka os configs do kitty e do Herdr
+    ├── kitty/
+    │   ├── kitty.conf        # → ~/.config/kitty/kitty.conf
+    │   └── theme.conf        # → ~/.config/kitty/theme.conf (fallback estático)
+    └── herdr/
+        └── config.toml       # → ~/.config/herdr/config.toml
 ```
 
 > 🔁 Os configs versionados são **linkados** (symlink) para suas localizações reais pelo `4-symlinks.sh` — editar o arquivo no repo reflete na hora no sistema. Os arquivos `~/.config/niri/dms/*.kdl` são **auto-gerados** pelo DMS (cores, layout etc.) e por isso **não** são versionados.

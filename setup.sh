@@ -22,7 +22,7 @@ fi
 # Formato: "Nome|descrição|dir1[:dir2...]" (dirs relativos a DOTFILES_ROOT)
 CATEGORIES=(
     "Desktop|niri (WM) + DankMaterialShell + SDDM|desktop/install"
-    "Terminal|kitty (animações de cursor + cores Material You)|terminal/install"
+    "Terminal|kitty (animações de cursor + cores Material You) + Herdr|terminal/install"
 )
 
 # Só scripts numerados (N-*.sh) entram no pipeline, em ordem numérica.
