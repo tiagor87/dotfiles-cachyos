@@ -419,9 +419,9 @@ binds {
 
     Mod+Ctrl+Left  { move-column-left; }
     Mod+Ctrl+Right { move-column-right; }
-    // Mod+Ctrl+↑/↓ reordenam o workspace atual; mover janela na coluna fica em Mod+Ctrl+J/K.
-    Mod+Ctrl+Down  { move-workspace-down; }
-    Mod+Ctrl+Up    { move-workspace-up; }
+    // Mod+Ctrl+↑/↓ movem a janela focada para o workspace de cima/baixo.
+    Mod+Ctrl+Down  { move-window-to-workspace-down; }
+    Mod+Ctrl+Up    { move-window-to-workspace-up; }
     Mod+Ctrl+H     { move-column-left; }
     Mod+Ctrl+J     { move-window-down; }
     Mod+Ctrl+K     { move-window-up; }
