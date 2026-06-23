@@ -439,9 +439,10 @@ binds {
     Mod+Ctrl+End  { move-column-to-last; }
 
     Mod+Shift+Left  { focus-monitor-left; }
-    Mod+Shift+Down  { focus-monitor-down; }
-    Mod+Shift+Up    { focus-monitor-up; }
     Mod+Shift+Right { focus-monitor-right; }
+    // Mod+Shift+↑/↓ movem a janela focada para o workspace de cima/baixo.
+    Mod+Shift+Down  { move-window-to-workspace-down; }
+    Mod+Shift+Up    { move-window-to-workspace-up; }
     Mod+Shift+H     { focus-monitor-left; }
     Mod+Shift+J     { focus-monitor-down; }
     Mod+Shift+K     { focus-monitor-up; }
