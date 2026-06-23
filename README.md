@@ -87,6 +87,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 ### Login / greeter (via `dms greeter` → greetd)
 - **greetd** + **greeter do DMS** — a própria UI do DMS na tela de login: **wallpaper dinâmico** (acompanha o desktop via `dms greeter sync`), cores **Material You**, remember-last-session/user. Substitui o SDDM (`dms greeter install`; reverter com `dms greeter uninstall`)
 - **numlock** ativo no login (herdado do `config.kdl` do niri) e **auto-unlock do keyring** (`pam_gnome_keyring` no `/etc/pam.d/greetd`)
+- **auto-resync do wallpaper**: o path unit `dms-greeter-resync.path` (systemd user) observa o `session.json` do DMS e roda `dms greeter sync` quando você troca o wallpaper — o login acompanha o desktop sozinho
 
 ### Terminal (via `pacman`)
 - **kitty** — terminal GPU com **animações de cursor** (rastro/trail, beam, piscada com easing, cursor oco ao desfocar). Tema **Catppuccin Mocha** como fallback, sobrescrito por cores **Material You dinâmicas** geradas pelo DMS (`dank-theme.conf`/`dank-tabs.conf` via matugen) que acompanham o wallpaper. Terminal padrão do niri (`Mod+T`)
@@ -111,31 +112,25 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 
 ```
 dotfiles-cachyos/
-├── setup.sh                 # orquestrador (menu de categorias)
-├── lib/
-│   └── install-helpers.sh   # helpers: pacman/AUR, symlink, serviços, log+resumo
-└── desktop/
-    ├── install/
-    │   ├── 1-niri.sh         # instala niri + utilitários
-    │   ├── 2-dms.sh          # instala DMS + habilita dms.service
-    │   ├── 3-sddm.sh         # instala + habilita SDDM
-    │   └── 4-symlinks.sh     # cria os symlinks dos configs abaixo
-│   ├── niri/
-│   │   └── config.kdl        # → ~/.config/niri/config.kdl
+├── setup.sh                      # orquestrador (menu de categorias)
+├── lib/install-helpers.sh        # pacman/AUR, symlink, serviços, log+resumo
+├── desktop/                      # categoria Desktop
+│   ├── install/                  # 1-niri 2-dms 3-greeter 4-symlinks 5-wallpapers
+│   ├── niri/config.kdl           # → ~/.config/niri/config.kdl
 │   ├── dms/
-│   │   └── settings.json     # → ~/.config/DankMaterialShell/settings.json
-│   └── sddm/
-│       └── 10-theme.conf     # copiado → /etc/sddm.conf.d/ (seleção do tema)
-└── terminal/
-    ├── install/
-    │   ├── 1-kitty.sh        # instala kitty + nerd font
-    │   ├── 2-herdr.sh        # instala Herdr (AUR)
-    │   └── 3-symlinks.sh     # linka os configs do kitty e do Herdr
-    ├── kitty/
-    │   ├── kitty.conf        # → ~/.config/kitty/kitty.conf
-    │   └── theme.conf        # → ~/.config/kitty/theme.conf (fallback estático)
-    └── herdr/
-        └── config.toml       # → ~/.config/herdr/config.toml
+│   │   ├── settings.json         # → ~/.config/DankMaterialShell/settings.json
+│   │   └── greeter-resync.sh     # → ~/.config/DankMaterialShell/ (auto-resync)
+│   └── systemd/                  # → ~/.config/systemd/user/ (path+service do resync)
+├── terminal/                     # categoria Terminal
+│   ├── install/                  # 1-kitty 2-herdr 3-symlinks
+│   ├── kitty/{kitty,theme}.conf  # → ~/.config/kitty/
+│   └── herdr/config.toml         # → ~/.config/herdr/config.toml
+├── boot/                         # categoria Boot
+│   ├── install/                  # 1-limine-theme 2-plymouth
+│   └── limine/catppuccin-mocha.conf
+└── security/                     # categoria Security
+    ├── install/                  # 1-gnome-keyring 2-symlinks
+    └── environment.d/10-ssh-agent.conf  # → ~/.config/environment.d/
 ```
 
 > 🔁 Os configs versionados são **linkados** (symlink) para suas localizações reais pelo `4-symlinks.sh` — editar o arquivo no repo reflete na hora no sistema. Os arquivos `~/.config/niri/dms/*.kdl` são **auto-gerados** pelo DMS (cores, layout etc.) e por isso **não** são versionados.

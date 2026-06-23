@@ -80,8 +80,8 @@ cat <<'EOF'
     Reverter para o DM anterior:  dms greeter uninstall
 
 Wallpaper dinâmico: o greeter mostra o wallpaper atual após `dms greeter sync`.
-Para re-sincronizar AUTOMATICAMENTE ao trocar de wallpaper, habilite o plugin
-WallpaperWatcherDaemon nas settings do DMS e aponte o "Script Path" para:
-    ~/.config/DankMaterialShell/greeter-resync.sh
+A re-sincronização é AUTOMÁTICA: o path unit `dms-greeter-resync.path` (systemd
+user, habilitado pelo 4-symlinks.sh) observa o session.json do DMS e roda
+`dms greeter sync` quando o wallpaper muda.
 ──────────────────────────────────────────────────────────────────────
 EOF

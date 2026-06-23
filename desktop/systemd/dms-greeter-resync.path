@@ -1,0 +1,10 @@
+[Unit]
+Description=Observa o wallpaper do DMS e re-sincroniza o greeter
+
+[Path]
+# session.json guarda o wallpaperPath atual; muda quando você troca o wallpaper.
+PathModified=%h/.local/state/DankMaterialShell/session.json
+Unit=dms-greeter-resync.service
+
+[Install]
+WantedBy=default.target

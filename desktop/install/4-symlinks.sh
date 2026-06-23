@@ -15,10 +15,17 @@ symlink "$HOME/.config/DankMaterialShell/settings.json" \
         "$DOTFILES_ROOT/desktop/dms/settings.json" \
         "DMS settings.json"
 
-# DMS: script de auto-resync do greeter (usado pelo WallpaperWatcherDaemon).
+# DMS: script de auto-resync do greeter + path/service units do systemd (user)
+# que o disparam quando o wallpaper muda.
 symlink "$HOME/.config/DankMaterialShell/greeter-resync.sh" \
         "$DOTFILES_ROOT/desktop/dms/greeter-resync.sh" \
         "DMS greeter-resync.sh"
+symlink "$HOME/.config/systemd/user/dms-greeter-resync.path" \
+        "$DOTFILES_ROOT/desktop/systemd/dms-greeter-resync.path" \
+        "dms-greeter-resync.path"
+symlink "$HOME/.config/systemd/user/dms-greeter-resync.service" \
+        "$DOTFILES_ROOT/desktop/systemd/dms-greeter-resync.service" \
+        "dms-greeter-resync.service"
 
 # O niri resolve `include "dms/..."` relativo à pasta do config (~/.config/niri/).
 # Esses arquivos são AUTO-GERADOS pelo DMS e por isso NÃO são versionados. Numa
@@ -46,4 +53,11 @@ if command -v niri >/dev/null 2>&1; then
         pkg_status "niri validate" "✗ config inválido" "$C_RED"
         log_entry config "niri validate" failed "rode 'niri validate' para ver o erro"
     fi
+fi
+
+# Habilita o auto-resync do greeter (path unit observa o wallpaper). É no-op até
+# o greeter do DMS existir (o script sai cedo via `dms greeter status`).
+if command -v systemctl >/dev/null 2>&1; then
+    systemctl --user daemon-reload 2>/dev/null || true
+    enable_user_service dms-greeter-resync.path
 fi

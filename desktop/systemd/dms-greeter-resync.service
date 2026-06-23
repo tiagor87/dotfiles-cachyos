@@ -1,0 +1,6 @@
+[Unit]
+Description=Sincroniza o wallpaper/tema do greeter do DMS
+
+[Service]
+Type=oneshot
+ExecStart=%h/.config/DankMaterialShell/greeter-resync.sh
