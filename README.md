@@ -49,9 +49,10 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 
 | Categoria | # | Script | Responsabilidade |
 |-----------|---|--------|------------------|
-| Desktop | 1 | `desktop/install/1-niri.sh` | Instala o **niri** + utilitários da sessão (alacritty, fuzzel, swaylock, swaybg, playerctl, brightnessctl, xwayland-satellite, portais XDG) e linka `config.kdl` em `~/.config/niri/` |
-| Desktop | 2 | `desktop/install/2-dms.sh` | Instala o **DankMaterialShell** (`dms-shell`) + deps (matugen, wl-clipboard, cliphist, cava, qt6-multimedia, inter-font, ícones Material Symbols do AUR) |
+| Desktop | 1 | `desktop/install/1-niri.sh` | Instala o **niri** + utilitários da sessão (alacritty, fuzzel, swaylock, swaybg, playerctl, brightnessctl, xwayland-satellite, portais XDG) |
+| Desktop | 2 | `desktop/install/2-dms.sh` | Instala o **DankMaterialShell** (`dms-shell`) + deps (matugen, wl-clipboard, cliphist, cava, qt6-multimedia, inter-font, ícones Material Symbols do AUR) e habilita o `dms.service` (autostart) |
 | Desktop | 3 | `desktop/install/3-sddm.sh` | Instala e habilita o **SDDM** no boot; avisa se outro display manager já estiver ativo |
+| Desktop | 4 | `desktop/install/4-symlinks.sh` | **Linka os configs** do repo: `config.kdl` → `~/.config/niri/` e `settings.json` → `~/.config/DankMaterialShell/`; cria stubs dos `include`s auto-gerados e valida o config do niri |
 
 ---
 
@@ -86,10 +87,10 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Atalho | Ação |
 |--------|------|
 | `Mod+Space` | App launcher (spotlight) |
-| `Mod+V` | Histórico de clipboard |
-| `Mod+M` | Lista de processos |
+| `Mod+Shift+Space` | Histórico de clipboard |
+| `Mod+Shift+Escape` | Lista de processos |
 
-> A barra sobe automaticamente no login via `spawn-at-startup "dms" "run"` no config do niri — **não** usamos `dms.service` (evita duplicar o shell). Settings do DMS: ícone de engrenagem na barra, ou `dms ipc call settings toggle`.
+> A barra sobe automaticamente no login via **`dms.service`** (serviço systemd de usuário, habilitado pelo `2-dms.sh`) — por isso o `spawn-at-startup` do DMS fica comentado no `config.kdl` (evita duplicar o shell). Settings do DMS: ícone de engrenagem na barra, ou `dms ipc call settings toggle`.
 
 ---
 
@@ -102,12 +103,17 @@ dotfiles-cachyos/
 │   └── install-helpers.sh   # helpers: pacman/AUR, symlink, serviços, log+resumo
 └── desktop/
     ├── install/
-    │   ├── 1-niri.sh
-    │   ├── 2-dms.sh
-    │   └── 3-sddm.sh
-    └── niri/
-        └── config.kdl        # config do niri (linkado p/ ~/.config/niri/)
+    │   ├── 1-niri.sh         # instala niri + utilitários
+    │   ├── 2-dms.sh          # instala DMS + habilita dms.service
+    │   ├── 3-sddm.sh         # instala + habilita SDDM
+    │   └── 4-symlinks.sh     # cria os symlinks dos configs abaixo
+    ├── niri/
+    │   └── config.kdl        # → ~/.config/niri/config.kdl
+    └── dms/
+        └── settings.json     # → ~/.config/DankMaterialShell/settings.json
 ```
+
+> 🔁 Os configs versionados são **linkados** (symlink) para suas localizações reais pelo `4-symlinks.sh` — editar o arquivo no repo reflete na hora no sistema. Os arquivos `~/.config/niri/dms/*.kdl` são **auto-gerados** pelo DMS (cores, layout etc.) e por isso **não** são versionados.
 
 ---
 

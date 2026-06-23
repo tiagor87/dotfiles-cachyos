@@ -19,12 +19,13 @@ repo_install \
 # Fonte de ícones Material Symbols (AUR).
 aur_install ttf-material-symbols-variable-git
 
-# O autostart é feito pelo próprio config.kdl do niri
-# (`spawn-at-startup "dms" "run"`), então NÃO habilitamos o dms.service aqui
-# — evita subir o shell duas vezes.
-c_info "Autostart do DMS é via spawn-at-startup no config do niri (sem dms.service)."
-
-# Diagnóstico opcional.
+# Autostart via serviço systemd de usuário (recomendado pelo DMS). O config.kdl
+# do niri NÃO usa spawn-at-startup pro DMS (deixa o spawn comentado) justamente
+# para o autostart ficar a cargo do dms.service — evita subir o shell duas vezes.
 if command -v dms >/dev/null 2>&1; then
+    enable_user_service dms.service
     c_info "Rode 'dms doctor' para checar dependências/warnings do DMS."
+else
+    c_warn "binário 'dms' não encontrado — pulei o enable do dms.service."
+    log_entry service dms.service failed "dms não instalado"
 fi
