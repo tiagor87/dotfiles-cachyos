@@ -1,7 +1,8 @@
 # claude.zsh — Claude Code com perfis isolados (porte do claude.ps1 do dotfiles-windows)
 #
-# Cada perfil tem um CLAUDE_CONFIG_DIR próprio (config + login isolados), mapeado
-# em ~/.claude_profiles.json: { "Nome": { "WorkDir": "...", "Args": "..." } }.
+# Cada perfil tem um CLAUDE_CONFIG_DIR próprio (config + login isolados) e uma
+# porta de proxy Headroom própria, mapeados em ~/.claude_profiles.json:
+#   { "Nome": { "WorkDir": "...", "Args": "...", "Port": 8787 } }.
 #
 # Uso:
 #   c                 → seletor (fzf) e roda o Claude Code na pasta atual
@@ -19,17 +20,21 @@ c() {
     local sub="${1:-}"
     case "$sub" in
         ls|list)
-            jq -r 'to_entries[] | "  \(.key)\t→ \(.value.WorkDir)"' "$_CLAUDE_PROFILES"
+            jq -r 'to_entries[] | "  \(.key)\t→ \(.value.WorkDir)\t:\(.value.Port // "auto")"' "$_CLAUDE_PROFILES"
             return ;;
         add)
             local name="${2:?uso: c add <nome> [workdir]}"
             local wd="${3:-$HOME/.claude.${name:l}}"
             mkdir -p "$wd"
+            # Porta de proxy própria: pega a maior porta já usada + 1 (base 8787),
+            # garantindo que dois perfis nunca colidam ao rodar em paralelo.
+            local port; port=$(jq -r '[.[].Port // 0] | max // 0' "$_CLAUDE_PROFILES")
+            [[ $port -ge 8787 ]] && port=$((port+1)) || port=8787
             local tmp; tmp=$(mktemp)
-            jq --arg n "$name" --arg w "$wd" '.[$n] = {WorkDir:$w, Args:""}' "$_CLAUDE_PROFILES" >"$tmp" && mv "$tmp" "$_CLAUDE_PROFILES"
+            jq --arg n "$name" --arg w "$wd" --argjson p "$port" '.[$n] = {WorkDir:$w, Args:"", Port:$p}' "$_CLAUDE_PROFILES" >"$tmp" && mv "$tmp" "$_CLAUDE_PROFILES"
             # linka o CLAUDE.md global dentro do WorkDir do perfil
             [[ -r $HOME/.claude/CLAUDE.md && ! -e $wd/CLAUDE.md ]] && ln -s "$HOME/.claude/CLAUDE.md" "$wd/CLAUDE.md"
-            print -P "%F{green}✓ perfil '$name' → $wd%f"
+            print -P "%F{green}✓ perfil '$name' → $wd  (porta $port)%f"
             return ;;
         rm|remove)
             local name="${2:?uso: c rm <nome>}"
@@ -54,28 +59,41 @@ c() {
     [[ -n $sel ]] || return 1
     jq -e --arg n "$sel" 'has($n)' "$_CLAUDE_PROFILES" >/dev/null 2>&1 || { print -P "%F{red}perfil '$sel' não existe%f"; return 1; }
 
-    local wd args
+    local wd args port
     wd=$(jq -r --arg n "$sel" '.[$n].WorkDir // ""' "$_CLAUDE_PROFILES")
     args=$(jq -r --arg n "$sel" '.[$n].Args // ""' "$_CLAUDE_PROFILES")
+    port=$(jq -r --arg n "$sel" '.[$n].Port // ""' "$_CLAUDE_PROFILES")
     [[ -n $wd ]] || wd="$HOME/.claude.${sel:l}"
+    # Perfis antigos (sem Port no JSON): deriva uma porta estável do nome,
+    # no intervalo 8787..9786, para não colidir com outros perfis.
+    [[ -n $port ]] || port=$(( 8787 + $(printf '%s' "$sel" | cksum | awk '{print $1}') % 1000 ))
     mkdir -p "$wd"
 
     # HONCHO_WORKSPACE_ID em PascalCase (compat. com o fluxo do dotfiles-windows)
     local wsid; wsid=$(printf '%s' "$sel" | sed -E 's/[ _-]+/ /g' | awk '{for(i=1;i<=NF;i++)$i=toupper(substr($i,1,1)) tolower(substr($i,2))}1' | tr -d ' ')
 
     print -P "\n%F{cyan}### ${sel:u} ENVIRONMENT ###%f"
-    print -P "%F{cyan}📌 Perfil:%f $sel   %F{8}⚙ CLAUDE_CONFIG_DIR=$wd%f\n"
+    print -P "%F{cyan}📌 Perfil:%f $sel   %F{8}⚙ CLAUDE_CONFIG_DIR=$wd  🔌 proxy :$port%f\n"
 
     # Se o Headroom estiver instalado, lança via `headroom wrap claude` (sobe o
-    # proxy de compressão e roteia a API) — vale para qualquer perfil. Senão,
-    # roda o claude direto. CLAUDE_CONFIG_DIR isola config/login por perfil.
+    # proxy de compressão e roteia a API) — cada perfil usa sua própria porta
+    # (-p $port) para rodar em paralelo sem colisão. Senão, roda o claude direto.
+    # CLAUDE_CONFIG_DIR isola config/login por perfil. --dangerously-skip-permissions
+    # é sempre passado ao claude.
+    # HEADROOM_PROXY_URL fixa a MESMA porta no proxy e no registro do MCP
+    # headroom_retrieve — se não bater, o retrieve não consegue expandir nada.
     if command -v headroom >/dev/null 2>&1; then
-        if [[ -n $args ]]; then
-            CLAUDE_CONFIG_DIR="$wd" HONCHO_WORKSPACE_ID="$wsid" headroom wrap claude -- ${=args}
-        else
-            CLAUDE_CONFIG_DIR="$wd" HONCHO_WORKSPACE_ID="$wsid" headroom wrap claude
-        fi
+        # Casa a porta do MCP headroom_retrieve com a do proxy DESTE perfil.
+        # O registro fica gravado em $wd/.claude.json com env vazio por padrão;
+        # `mcp install --force` reescreve env={HEADROOM_PROXY_URL=:$port} só
+        # neste CLAUDE_CONFIG_DIR (a config global não é tocada).
+        CLAUDE_CONFIG_DIR="$wd" headroom mcp install --agent claude \
+            --proxy-url "http://127.0.0.1:$port" --force >/dev/null 2>&1
+        CLAUDE_CONFIG_DIR="$wd" HONCHO_WORKSPACE_ID="$wsid" \
+        HEADROOM_PROXY_URL="http://127.0.0.1:$port" \
+            headroom wrap claude -p "$port" -- --dangerously-skip-permissions ${=args}
     else
-        CLAUDE_CONFIG_DIR="$wd" HONCHO_WORKSPACE_ID="$wsid" claude ${=args}
+        CLAUDE_CONFIG_DIR="$wd" HONCHO_WORKSPACE_ID="$wsid" \
+            claude --dangerously-skip-permissions ${=args}
     fi
 }
