@@ -8,7 +8,6 @@ source "${DOTFILES_ROOT:?}/lib/install-helpers.sh"
 # Os symlinks dos configs ficam no passo 4-symlinks.sh (padrão dotfiles-windows).
 repo_install \
     niri \
-    alacritty \
     fuzzel \
     swaylock \
     swaybg \

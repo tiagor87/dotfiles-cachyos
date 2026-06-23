@@ -53,6 +53,8 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Desktop | 2 | `desktop/install/2-dms.sh` | Instala o **DankMaterialShell** (`dms-shell`) + deps (matugen, wl-clipboard, cliphist, cava, qt6-multimedia, inter-font, ícones Material Symbols do AUR) e habilita o `dms.service` (autostart) |
 | Desktop | 3 | `desktop/install/3-sddm.sh` | Instala e habilita o **SDDM** no boot; avisa se outro display manager já estiver ativo |
 | Desktop | 4 | `desktop/install/4-symlinks.sh` | **Linka os configs** do repo: `config.kdl` → `~/.config/niri/` e `settings.json` → `~/.config/DankMaterialShell/`; cria stubs dos `include`s auto-gerados e valida o config do niri |
+| Terminal | 1 | `terminal/install/1-kitty.sh` | Instala o **kitty** + **JetBrainsMono Nerd Font** |
+| Terminal | 2 | `terminal/install/2-symlinks.sh` | Linka `kitty.conf` e `theme.conf` para `~/.config/kitty/` e valida a config |
 
 ---
 
@@ -60,7 +62,6 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 
 ### Compositor & sessão (via `pacman`)
 - **niri** — compositor Wayland scrollable-tiling
-- **alacritty** — terminal (`Mod+T`)
 - **fuzzel** — launcher legado (`Mod+D`)
 - **swaylock** — lock screen (`Super+Alt+L`)
 - **swaybg** — wallpaper
@@ -79,6 +80,10 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 
 ### Display manager (via `pacman`)
 - **sddm** (+ `qt6-svg`, `qt6-declarative`) — tela de login; habilitado no boot
+
+### Terminal (via `pacman`)
+- **kitty** — terminal GPU com **animações de cursor** (rastro/trail, beam, piscada com easing, cursor oco ao desfocar). Tema **Catppuccin Mocha** como fallback, sobrescrito por cores **Material You dinâmicas** geradas pelo DMS (`dank-theme.conf`/`dank-tabs.conf` via matugen) que acompanham o wallpaper. Terminal padrão do niri (`Mod+T`)
+- **JetBrainsMono Nerd Font** — fonte com ícones/ligaduras
 
 ---
 
@@ -107,10 +112,17 @@ dotfiles-cachyos/
     │   ├── 2-dms.sh          # instala DMS + habilita dms.service
     │   ├── 3-sddm.sh         # instala + habilita SDDM
     │   └── 4-symlinks.sh     # cria os symlinks dos configs abaixo
-    ├── niri/
-    │   └── config.kdl        # → ~/.config/niri/config.kdl
-    └── dms/
-        └── settings.json     # → ~/.config/DankMaterialShell/settings.json
+│   ├── niri/
+│   │   └── config.kdl        # → ~/.config/niri/config.kdl
+│   └── dms/
+│       └── settings.json     # → ~/.config/DankMaterialShell/settings.json
+└── terminal/
+    ├── install/
+    │   ├── 1-kitty.sh        # instala kitty + nerd font
+    │   └── 2-symlinks.sh     # linka os configs do kitty
+    └── kitty/
+        ├── kitty.conf        # → ~/.config/kitty/kitty.conf
+        └── theme.conf        # → ~/.config/kitty/theme.conf (fallback estático)
 ```
 
 > 🔁 Os configs versionados são **linkados** (symlink) para suas localizações reais pelo `4-symlinks.sh` — editar o arquivo no repo reflete na hora no sistema. Os arquivos `~/.config/niri/dms/*.kdl` são **auto-gerados** pelo DMS (cores, layout etc.) e por isso **não** são versionados.
