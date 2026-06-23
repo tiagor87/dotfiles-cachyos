@@ -30,3 +30,6 @@ alias ls='ls --color=auto'
 alias ll='ls -lah --color=auto'
 alias la='ls -A --color=auto'
 alias grep='grep --color=auto'
+
+# Claude Code com perfis isolados (função c)
+[[ -r ~/.config/claude/claude.zsh ]] && source ~/.config/claude/claude.zsh

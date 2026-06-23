@@ -26,9 +26,10 @@ set_category() { export CURRENT_CATEGORY="$1"; }
 
 # log_entry <tipo> <nome> <status> [detalhe]
 log_entry() {
-    local type="$1" name="$2" status="$3" detail="${4:-}"
+    # 'st' em vez de 'status' (em zsh 'status' é read-only).
+    local type="$1" name="$2" st="$3" detail="${4:-}"
     printf '%s\t%s\t%s\t%s\t%s\n' \
-        "$CURRENT_CATEGORY" "$type" "$name" "$status" "$detail" \
+        "$CURRENT_CATEGORY" "$type" "$name" "$st" "$detail" \
         >>"$DOTFILES_LOG_FILE"
 }
 
@@ -218,17 +219,17 @@ show_summary() {
 
     [[ -s $DOTFILES_LOG_FILE ]] || { printf '\n(nada processado)\n'; return; }
 
-    local total=0 failed=0 cat status
+    local total=0 failed=0 cat st
     local categories; categories=$(cut -f1 "$DOTFILES_LOG_FILE" | awk '!seen[$0]++')
 
     while IFS= read -r cat; do
         printf '\n%s▼ %s%s\n' "$C_CYAN" "$cat" "$C_RESET"
-        for status in installed updated skipped configured failed; do
+        for st in installed updated skipped configured failed; do
             while IFS=$'\t' read -r lcat ltype lname lstatus ldetail; do
-                [[ $lcat == "$cat" && $lstatus == "$status" ]] || continue
+                [[ $lcat == "$cat" && $lstatus == "$st" ]] || continue
                 total=$((total+1))
                 local label color
-                case $status in
+                case $st in
                     installed)  label='✓ Instalado  '; color=$C_GREEN ;;
                     updated)    label='↑ Atualizado '; color=$C_YELLOW ;;
                     skipped)    label='= Já presente'; color=$C_DIM ;;
