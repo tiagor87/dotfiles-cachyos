@@ -66,23 +66,44 @@ c_ok "Backup do fstab: $BACKUP"
 added=0
 while IFS=$'\t' read -r uuid rest; do
     [[ -n $uuid ]] || continue
-    # nome do ponto de montagem: rótulo (sanitizado) ou win-<dev>
+    # Ponto de montagem em /mnt (padrão, não polui o filesystem do $HOME) e um
+    # atalho "humano" em ~/<rótulo> via symlink.
     label=$(printf '%s' "$rest" | awk '{print $1}')
+    homelink=""
     if [[ -z $label || $label == "(sem" ]]; then
         dev=$(printf '%s' "$rest" | grep -oE '/dev/\S+'); mp="/mnt/win-$(basename "$dev")"
     else
-        mp="/mnt/$(printf '%s' "$label" | tr -c 'A-Za-z0-9._-' '_')"
+        clean=$(printf '%s' "$label" | tr -c 'A-Za-z0-9._-' '_')
+        mp="/mnt/$clean"
+        homelink="$HOME/$clean"
     fi
 
+    sudo mkdir -p "$mp"
+
+    # Entrada no fstab (idempotente por UUID).
     if grep -q "UUID=$uuid" "$FSTAB"; then
         pkg_status "$mp" "= já no fstab" "$C_DIM"; log_entry storage "$mp" skipped "$uuid"
-        continue
+    else
+        echo "UUID=$uuid  $mp  ntfs3  $OPTS  0 0" | sudo tee -a "$FSTAB" >/dev/null
+        pkg_status "$mp" "✓ adicionado (UUID=$uuid)" "$C_GREEN"
+        log_entry storage "$mp" configured "ntfs3 nofail+automount"
+        added=$((added+1))
     fi
-    sudo mkdir -p "$mp"
-    echo "UUID=$uuid  $mp  ntfs3  $OPTS  0 0" | sudo tee -a "$FSTAB" >/dev/null
-    pkg_status "$mp" "✓ adicionado (UUID=$uuid)" "$C_GREEN"
-    log_entry storage "$mp" configured "ntfs3 nofail+automount"
-    added=$((added+1))
+
+    # Atalho humano em ~/<rótulo> → /mnt/<rótulo> (acessar ~ já dispara o automount).
+    if [[ -n $homelink ]]; then
+        if [[ -L $homelink ]]; then
+            ln -sfn "$mp" "$homelink"
+            pkg_status "~/$(basename "$homelink")" "= atalho ok" "$C_DIM"
+        elif [[ -e $homelink ]]; then
+            pkg_status "~/$(basename "$homelink")" "! já existe (não-symlink) — não toquei" "$C_YELLOW"
+            log_entry storage "$homelink" skipped "já existe como diretório/arquivo"
+        else
+            ln -s "$mp" "$homelink"
+            pkg_status "~/$(basename "$homelink")" "✓ atalho → $mp" "$C_GREEN"
+            log_entry storage "$homelink" configured "symlink → $mp"
+        fi
+    fi
 done <<<"$selection"
 
 # Validação: se o fstab ficou inválido, restaura o backup.
