@@ -1,0 +1,11 @@
+# Backups criados pelos symlinks
+*.bak
+*.bak.*
+
+# Logs temporários de instalação
+dotfiles-install-log.*
+
+# Lixo de editor / SO
+*.swp
+*~
+.DS_Store
