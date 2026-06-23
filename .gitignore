@@ -9,3 +9,6 @@ dotfiles-install-log.*
 *.swp
 *~
 .DS_Store
+
+# Serena MCP (artefato de projeto, não versionar)
+.serena/

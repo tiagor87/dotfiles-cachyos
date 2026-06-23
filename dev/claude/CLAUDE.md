@@ -64,4 +64,3 @@ Invoke when the user's intent matches:
 - Em todo projeto de desenvolvimento, **preferir Dev Containers** (`.devcontainer/`) para isolar SDKs, runtimes e dependências. Só desviar quando o projeto explicitamente exigir setup nativo.
 - Em todo projeto de desenvolvimento, **adotar SDD (Spec-Driven Development) com [SpecKit](https://github.com/github/spec-kit)**: fluxo `specify → clarify → plan → tasks → implement`, com a constitution do projeto governando os princípios.
 
-@RTK.md
