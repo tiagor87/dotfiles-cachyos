@@ -51,7 +51,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 |-----------|---|--------|------------------|
 | Desktop | 1 | `desktop/install/1-niri.sh` | Instala o **niri** + utilitários da sessão (alacritty, fuzzel, swaylock, swaybg, playerctl, brightnessctl, xwayland-satellite, portais XDG) |
 | Desktop | 2 | `desktop/install/2-dms.sh` | Instala o **DankMaterialShell** (`dms-shell`) + deps (matugen, wl-clipboard, cliphist, cava, qt6-multimedia, inter-font, ícones Material Symbols do AUR) e habilita o `dms.service` (autostart) |
-| Desktop | 3 | `desktop/install/3-sddm.sh` | Instala e habilita o **SDDM** + tema **sddm-astronaut-theme** (variante `purple_leaves`, AUR); copia a seleção do tema para `/etc/sddm.conf.d/` |
+| Desktop | 3 | `desktop/install/3-greeter.sh` | Login via **greeter do DMS** (greetd): `dms greeter install` (substitui o SDDM) + `sync` (wallpaper dinâmico); adiciona `pam_gnome_keyring` ao `/etc/pam.d/greetd` (auto-unlock) e confirma numlock. ⚠️ crítico de login |
 | Desktop | 4 | `desktop/install/4-symlinks.sh` | **Linka os configs** do repo: `config.kdl` → `~/.config/niri/` e `settings.json` → `~/.config/DankMaterialShell/`; cria stubs dos `include`s auto-gerados e valida o config do niri |
 | Desktop | 5 | `desktop/install/5-wallpapers.sh` | Monta a **biblioteca de wallpapers** em **pasta única** (`~/<Pictures>/Wallpapers`, prefixo por coleção) p/ a ciclagem do DMS percorrer tudo: copia a coleção local do CachyOS; coleções de anime/games/Catppuccin são opt-in (`DOTFILES_WALLPAPERS_FETCH=1`) |
 | Terminal | 1 | `terminal/install/1-kitty.sh` | Instala o **kitty** + **JetBrainsMono Nerd Font** |
@@ -84,9 +84,9 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **inter-font** — fonte de texto do DMS
 - **ttf-material-symbols-variable-git** (AUR) — ícones do DMS
 
-### Display manager (via `pacman` + AUR)
-- **sddm** (+ `qt6-svg`, `qt6-declarative`) — tela de login; habilitado no boot
-- **sddm-astronaut-theme** (AUR) — tela de login moderna e animada, variante **`purple_leaves`** (combina com o roxo do DMS). Trocar variante: edite `ConfigFile=Themes/<nome>.conf` em `/usr/share/sddm/themes/sddm-astronaut-theme/metadata.desktop` (opções: `astronaut`, `black_hole`, `cyberpunk`, `pixel_sakura`, `japanese_aesthetic`, …)
+### Login / greeter (via `dms greeter` → greetd)
+- **greetd** + **greeter do DMS** — a própria UI do DMS na tela de login: **wallpaper dinâmico** (acompanha o desktop via `dms greeter sync`), cores **Material You**, remember-last-session/user. Substitui o SDDM (`dms greeter install`; reverter com `dms greeter uninstall`)
+- **numlock** ativo no login (herdado do `config.kdl` do niri) e **auto-unlock do keyring** (`pam_gnome_keyring` no `/etc/pam.d/greetd`)
 
 ### Terminal (via `pacman`)
 - **kitty** — terminal GPU com **animações de cursor** (rastro/trail, beam, piscada com easing, cursor oco ao desfocar). Tema **Catppuccin Mocha** como fallback, sobrescrito por cores **Material You dinâmicas** geradas pelo DMS (`dank-theme.conf`/`dank-tabs.conf` via matugen) que acompanham o wallpaper. Terminal padrão do niri (`Mod+T`)
