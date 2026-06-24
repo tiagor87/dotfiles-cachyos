@@ -370,6 +370,8 @@ binds {
     Mod+T      hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
     Mod+Return hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
     Mod+D hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
+    // Abre o browser default do sistema (resolve via xdg-settings, lança o .desktop).
+    Mod+B hotkey-overlay-title="Open the Default Browser" { spawn-sh "gtk-launch \"$(xdg-settings get default-web-browser)\""; }
 
     // >>> DMS keybinds
     Mod+Space       hotkey-overlay-title="App Launcher (DMS)" { spawn "dms" "ipc" "call" "spotlight" "toggle"; }
