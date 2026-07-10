@@ -18,6 +18,11 @@ if [[ ${EUID} -eq 0 ]]; then
     exit 1
 fi
 
+# Ativa o hook pre-commit versionado (barra segredos). Idempotente.
+if [[ -d $DOTFILES_ROOT/.git && -x $DOTFILES_ROOT/.githooks/pre-commit ]]; then
+    git -C "$DOTFILES_ROOT" config core.hooksPath .githooks
+fi
+
 # --- Definição de categorias (ordem importa) -------------------------------
 # Formato: "Nome|descrição|dir1[:dir2...]" (dirs relativos a DOTFILES_ROOT)
 CATEGORIES=(

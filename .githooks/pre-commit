@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# pre-commit — barra segredos antes de entrarem no histórico.
+#
+# Varre APENAS as linhas adicionadas no staging. Se casar algum padrão de
+# segredo, aborta o commit e aponta arquivo:linha. Para casos legítimos
+# (raro), use `git commit --no-verify` conscientemente.
+#
+# Ativado por: git config core.hooksPath .githooks
+set -uo pipefail
+
+# Padrões de segredo (regex estendida). Rótulo|regex.
+patterns=(
+    "Cloudflare API token|cfat_[A-Za-z0-9]{20,}"
+    "AWS access key id|AKIA[0-9A-Z]{16}"
+    "Chave privada (PEM)|BEGIN[[:space:]]+[A-Z ]*PRIVATE KEY"
+    "Token/segredo em atribuição|(TOKEN|SECRET|API_?KEY|PASSWORD|PASSWD|CLIENT_SECRET)[\"']?[[:space:]]*[:=][[:space:]]*[\"']?[A-Za-z0-9_\\-]{20,}"
+    "RDS secret id (Secrets Manager)|rds![0-9a-f-]{8,}"
+    "Bastion/EC2 instance id|target[[:space:]]+i-[0-9a-f]{8,}"
+)
+
+hits=0
+# Lista de arquivos staged (added/copied/modified), ignorando binários.
+while IFS= read -r file; do
+    [[ -z $file ]] && continue
+    # Diff só das linhas adicionadas (prefixo '+', fora do cabeçalho '+++').
+    added=$(git diff --cached --unified=0 -- "$file" | grep -E '^\+' | grep -vE '^\+\+\+')
+    [[ -z $added ]] && continue
+    for entry in "${patterns[@]}"; do
+        label=${entry%%|*}
+        regex=${entry#*|}
+        if match=$(printf '%s\n' "$added" | grep -inE "$regex"); then
+            while IFS= read -r line; do
+                printf '  ✗ %s\n      %s: %s\n' "$label" "$file" "${line#*:}"
+            done <<<"$match"
+            hits=1
+        fi
+    done
+done < <(git diff --cached --name-only --diff-filter=ACM)
+
+if [[ $hits -ne 0 ]]; then
+    printf '\n\033[31mCommit bloqueado: possível segredo detectado.\033[0m\n'
+    printf 'Mova o valor para ~/.zshenv (não versionado) ou, se for falso positivo,\n'
+    printf 'commite com: git commit --no-verify\n\n'
+    exit 1
+fi
+exit 0

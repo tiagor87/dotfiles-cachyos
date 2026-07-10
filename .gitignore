@@ -12,3 +12,10 @@ dotfiles-install-log.*
 
 # Serena MCP (artefato de projeto, não versionar)
 .serena/
+
+# Segredos / overrides locais (nunca versionar — ver ~/.zshenv)
+*.local
+.env
+.env.*
+*.secret
+secrets.*
