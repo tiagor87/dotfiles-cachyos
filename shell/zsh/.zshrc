@@ -36,3 +36,11 @@ alias grep='grep --color=auto'
 
 # ~/.local/bin no PATH (uv tools, headroom wrap)
 export PATH="$HOME/.local/bin:$PATH"
+
+
+# >>> Codex installer >>>
+export PATH="/home/tiago/.local/bin:$PATH"
+# <<< Codex installer <<<
+
+# Secrets e acesso a bancos (kodano) ficam em ~/.zshenv (não versionado),
+# carregado pelo zsh antes deste arquivo.
