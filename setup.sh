@@ -22,7 +22,7 @@ fi
 # Formato: "Nome|descrição|dir1[:dir2...]" (dirs relativos a DOTFILES_ROOT)
 CATEGORIES=(
     "Desktop|niri (WM) + DankMaterialShell + greeter do DMS (greetd)|desktop/install"
-    "Terminal|kitty (animações de cursor + cores Material You) + Herdr|terminal/install"
+    "Terminal|WezTerm (panes nativos + cores Material You)|terminal/install"
     "Boot|Plymouth (splash) + tema do Limine — Catppuccin Mocha|boot/install"
     "Security|gnome-keyring (Secret Service + agente SSH, auto-unlock)|security/install"
     "Shell|zsh + Oh My Zsh + fzf|shell/install"

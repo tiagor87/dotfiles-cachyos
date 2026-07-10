@@ -367,8 +367,8 @@ binds {
     Mod+Shift+Slash { show-hotkey-overlay; }
 
     // Suggested binds for running programs: terminal, app launcher, screen locker.
-    Mod+T      hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
-    Mod+Return hotkey-overlay-title="Open a Terminal: kitty" { spawn "kitty"; }
+    Mod+T      hotkey-overlay-title="Open a Terminal: wezterm" { spawn "wezterm"; }
+    Mod+Return hotkey-overlay-title="Open a Terminal: wezterm" { spawn "wezterm"; }
     Mod+D hotkey-overlay-title="Run an Application: fuzzel" { spawn "fuzzel"; }
     // Abre o browser default do sistema (resolve via xdg-settings, lança o .desktop).
     Mod+B hotkey-overlay-title="Open the Default Browser" { spawn-sh "gtk-launch \"$(xdg-settings get default-web-browser)\""; }

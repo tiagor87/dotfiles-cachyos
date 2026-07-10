@@ -56,9 +56,8 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Desktop | 4 | `desktop/install/4-symlinks.sh` | **Linka os configs** do repo: `config.kdl` → `~/.config/niri/` e `settings.json` → `~/.config/DankMaterialShell/`; cria stubs dos `include`s auto-gerados e valida o config do niri |
 | Desktop | 5 | `desktop/install/5-wallpapers.sh` | Monta a **biblioteca de wallpapers** em **pasta única** (`~/<Pictures>/Wallpapers`, prefixo por coleção) p/ a ciclagem do DMS percorrer tudo: copia a coleção local do CachyOS; coleções de anime/games/Catppuccin são opt-in (`DOTFILES_WALLPAPERS_FETCH=1`) |
 | Desktop | 6 | `desktop/install/6-profile-picture.sh` | Define a **foto de perfil** (`desktop/dms/profile.png`) via AccountsService (sem sudo) — usada pelo DMS/lock screen. Idempotente |
-| Terminal | 1 | `terminal/install/1-kitty.sh` | Instala o **kitty** + **JetBrainsMono Nerd Font** |
-| Terminal | 2 | `terminal/install/2-herdr.sh` | Instala o **Herdr** (multiplexer de coding agents) via AUR |
-| Terminal | 3 | `terminal/install/3-symlinks.sh` | Linka `kitty.conf`/`theme.conf` → `~/.config/kitty/` e `herdr/config.toml` → `~/.config/herdr/`; valida a config do kitty |
+| Terminal | 1 | `terminal/install/1-wezterm.sh` | Instala o **WezTerm** + **JetBrainsMono Nerd Font** + **nodejs** (equalize de panes) |
+| Terminal | 2 | `terminal/install/2-symlinks.sh` | Linka `wezterm.lua`/`equalize.js` → `~/.config/wezterm/`, cria `~/.config/wezterm/colors/` (cores do DMS) e valida a config do WezTerm |
 | Boot | 1 | `boot/install/1-limine-theme.sh` | Garante a paleta **Catppuccin Mocha** no `/boot/limine.conf` (idempotente, backup + checagem de sanidade das entradas; preserva o wallpaper/splash) |
 | Boot | 2 | `boot/install/2-plymouth.sh` | Instala o tema **Plymouth `darth_vader`** (adi1090x, splash animado) e reconstrói o initramfs |
 | Security | 1 | `security/install/1-gnome-keyring.sh` | Instala **gnome-keyring** + seahorse, habilita o `gcr-ssh-agent.socket` e integra o git (`credential.helper=libsecret`) |
@@ -103,9 +102,9 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **auto-resync do wallpaper**: o path unit `dms-greeter-resync.path` (systemd user) observa o `session.json` do DMS e roda `dms greeter sync` quando você troca o wallpaper — o login acompanha o desktop sozinho
 
 ### Terminal (via `pacman`)
-- **kitty** — terminal GPU com **animações de cursor** (rastro/trail, beam, piscada com easing, cursor oco ao desfocar). Tema **Catppuccin Mocha** como fallback, sobrescrito por cores **Material You dinâmicas** geradas pelo DMS (`dank-theme.conf`/`dank-tabs.conf` via matugen) que acompanham o wallpaper. Terminal padrão do niri (`Mod+T` **e `Mod+Enter`**). `Shift+Enter` = nova linha (CSI u, p/ Claude Code/Herdr/nvim)
+- **WezTerm** — terminal GPU com **panes/splits nativos** (`Ctrl+\` horizontal, `Ctrl+-` vertical), navegação `Ctrl+Shift+hjkl`/setas, zoom `Ctrl+Shift+Z` e **equalize** `Ctrl+Shift+E` (distribui os panes da aba, via `equalize.js`/node). Tema **Catppuccin Mocha** como fallback, sobrescrito por cores **Material You dinâmicas** geradas pelo DMS (`colors/dank-theme.toml` via matugen) que acompanham o wallpaper (recolore ao vivo pelo watch do config). Terminal padrão do niri (`Mod+T` **e `Mod+Enter`**). `Shift+Enter` = nova linha (CSI u, p/ Claude Code/nvim)
 - **JetBrainsMono Nerd Font** — fonte com ícones/ligaduras
-- **Herdr** (AUR `herdr-bin`) — multiplexer de coding agents (tmux para agentes). Tema `terminal` → herda a paleta do kitty (logo, as cores Material You do DMS) e a fonte do próprio kitty: muda junto com o wallpaper, sem config extra
+- **nodejs** — roda o `equalize.js` (distribuição igual dos panes)
 
 ### Shell (via `pacman` + script)
 - **zsh** + **Oh My Zsh** — shell padrão; `.zshrc` versionado (tema `robbyrussell`, plugins `git`/`fzf`/`sudo`). Configurável por **fzf** no setup (`3-configure-zsh.sh`) — escolhe tema + plugins — ou editando o `.zshrc` direto
@@ -141,12 +140,12 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 
 | Atalho | Ação |
 |--------|------|
-| `Mod+T` / `Mod+Enter` | abre o terminal (kitty) |
+| `Mod+T` / `Mod+Enter` | abre o terminal (WezTerm) |
 | `Mod+↑` / `Mod+↓` | navega foco (janela na coluna → transborda p/ workspace) |
 | `Mod+Shift+↑/↓` · `Mod+Ctrl+↑/↓` | move a janela entre workspaces |
 | `Mod+J` / `Mod+K` | foco de janela na coluna |
 
-**kitty:** `Shift+Enter` = nova linha (CSI u, p/ Claude Code/Herdr/nvim).
+**WezTerm:** `Shift+Enter` = nova linha (CSI u, p/ Claude Code/nvim). Panes: `Ctrl+\`/`Ctrl+-` split, `Ctrl+Shift+hjkl` navega, `Ctrl+Shift+E` equaliza.
 
 > A barra sobe automaticamente no login via **`dms.service`** (serviço systemd de usuário, habilitado pelo `2-dms.sh`) — por isso o `spawn-at-startup` do DMS fica comentado no `config.kdl` (evita duplicar o shell). Settings do DMS: ícone de engrenagem na barra, ou `dms ipc call settings toggle`.
 
@@ -166,9 +165,8 @@ dotfiles-cachyos/
 │   │   └── greeter-resync.sh     # → ~/.config/DankMaterialShell/ (auto-resync)
 │   └── systemd/                  # → ~/.config/systemd/user/ (path+service do resync)
 ├── terminal/                     # categoria Terminal
-│   ├── install/                  # 1-kitty 2-herdr 3-symlinks
-│   ├── kitty/{kitty,theme}.conf  # → ~/.config/kitty/
-│   └── herdr/config.toml         # → ~/.config/herdr/config.toml
+│   ├── install/                  # 1-wezterm 2-symlinks
+│   └── wezterm/                  # wezterm.lua + equalize.js → ~/.config/wezterm/
 ├── boot/                         # categoria Boot
 │   ├── install/                  # 1-limine-theme 2-plymouth
 │   └── limine/catppuccin-mocha.conf
