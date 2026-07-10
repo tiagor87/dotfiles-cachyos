@@ -1,6 +1,6 @@
 {
-  "currentThemeName": "purple",
-  "currentThemeCategory": "generic",
+  "currentThemeName": "dynamic",
+  "currentThemeCategory": "dynamic",
   "customThemeFile": "",
   "registryThemeVariants": {},
   "matugenScheme": "scheme-tonal-spot",
@@ -9,7 +9,7 @@
   "popupTransparency": 1,
   "dockTransparency": 1,
   "widgetBackgroundColor": "sch",
-  "widgetColorMode": "default",
+  "widgetColorMode": "colorful",
   "controlCenterTileColorMode": "primary",
   "buttonColorMode": "primary",
   "cornerRadius": 12,
@@ -42,7 +42,7 @@
   "blurBorderColor": "outline",
   "blurBorderCustomColor": "#ffffff",
   "blurBorderOpacity": 0.35,
-  "wallpaperFillMode": "Tile",
+  "wallpaperFillMode": "Fill",
   "blurredWallpaperLayer": false,
   "blurWallpaperOnOverview": false,
   "showLauncherButton": true,
@@ -262,7 +262,11 @@
   "launchPrefix": "",
   "brightnessDevicePins": {},
   "wifiNetworkPins": {},
-  "bluetoothDevicePins": {},
+  "bluetoothDevicePins": {
+    "preferredDevice": [
+      "CC:56:5C:84:DE:E7"
+    ]
+  },
   "audioInputDevicePins": {},
   "audioOutputDevicePins": {},
   "gtkThemingEnabled": false,
@@ -286,7 +290,7 @@
   "matugenTemplateVesktop": true,
   "matugenTemplateEquibop": true,
   "matugenTemplateGhostty": true,
-  "matugenTemplateKitty": true,
+  "matugenTemplateKitty": false,
   "matugenTemplateFoot": true,
   "matugenTemplateAlacritty": false,
   "matugenTemplateNeovim": false,
@@ -339,7 +343,6 @@
   "maxFprintTries": 15,
   "enableU2f": false,
   "u2fMode": "or",
-  "lockScreenActiveMonitor": "all",
   "lockScreenInactiveColor": "#000000",
   "lockScreenNotificationMode": 0,
   "hideBrightnessSlider": false,
@@ -414,7 +417,10 @@
       "enabled": true,
       "position": 0,
       "screenPreferences": [
-        "all"
+        {
+          "name": "DP-1",
+          "model": "LG ULTRAGEAR+"
+        }
       ],
       "showOnLastDisplay": true,
       "leftWidgets": [
@@ -425,7 +431,11 @@
       "centerWidgets": [
         "music",
         "clock",
-        "weather"
+        "weather",
+        {
+          "id": "dankPomodoroTimer",
+          "enabled": true
+        }
       ],
       "rightWidgets": [
         "systemTray",
@@ -553,5 +563,6 @@
   "clipboardEnterToPaste": false,
   "launcherPluginVisibility": {},
   "launcherPluginOrder": [],
-  "configVersion": 5
+  "configVersion": 12,
+  "barElevationEnabled": false
 }
