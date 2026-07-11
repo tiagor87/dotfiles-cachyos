@@ -56,6 +56,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Desktop | 4 | `desktop/install/4-symlinks.sh` | **Linka os configs** do repo: `config.kdl` → `~/.config/niri/` e `settings.json` → `~/.config/DankMaterialShell/`; cria stubs dos `include`s auto-gerados e valida o config do niri |
 | Desktop | 5 | `desktop/install/5-wallpapers.sh` | Monta a **biblioteca de wallpapers** em **pasta única** (`~/<Pictures>/Wallpapers`, prefixo por coleção) p/ a ciclagem do DMS percorrer tudo: copia a coleção local do CachyOS; coleções de anime/games/Catppuccin são opt-in (`DOTFILES_WALLPAPERS_FETCH=1`) |
 | Desktop | 6 | `desktop/install/6-profile-picture.sh` | Define a **foto de perfil** (`desktop/dms/profile.png`) via AccountsService (sem sudo) — usada pelo DMS/lock screen. Idempotente |
+| Desktop | 7 | `desktop/install/7-browser.sh` | Instala o **Brave Origin** (repo oficial CachyOS); Widevine (DRM) via `brave://settings`, sem pacote extra |
 | Terminal | 1 | `terminal/install/1-wezterm.sh` | Instala o **WezTerm** + **JetBrainsMono Nerd Font** + **nodejs** (equalize de panes) |
 | Terminal | 2 | `terminal/install/2-symlinks.sh` | Linka `wezterm.lua`/`equalize.js` → `~/.config/wezterm/`, cria `~/.config/wezterm/colors/` (cores do DMS) e valida a config do WezTerm |
 | Boot | 1 | `boot/install/1-limine-theme.sh` | Garante a paleta **Catppuccin Mocha** no `/boot/limine.conf` (idempotente, backup + checagem de sanidade das entradas; preserva o wallpaper/splash) |
@@ -72,6 +73,8 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Dev | 5 | `dev/install/5-claude-code.sh` | Instala o **Claude Code** (+ jq), liga o `CLAUDE.md` global e a função `c` de **perfis isolados** (`CLAUDE_CONFIG_DIR` por perfil) ao `.zshrc`; seed do perfil `default` |
 | Dev | 6 | `dev/install/6-claude-profiles.sh` | **Pergunta os perfis** do Claude Code durante a instalação (cria/edita em `~/.claude_profiles.json`, com `CLAUDE.md` linkado por perfil) |
 | Dev | 7 | `dev/install/7-headroom.sh` | Instala o **Headroom** (compressão de contexto, via `uv tool`). A integração é na função `c`: ela lança `headroom wrap claude` por perfil — todos os perfis roteiam pelo Headroom |
+| Dev | 8 | `dev/install/8-claude-hud.sh` | Instala o **claude-hud** (HUD de statusline: contexto, tools, agents, todos) em **todos os perfis** do Claude Code, lendo `~/.claude_profiles.json`; configura o `statusLine` de cada perfil via `claude plugin install`. Idempotente por perfil |
+| Dev | 9 | `dev/install/9-beekeeper-studio.sh` | Instala o **Beekeeper Studio** (AUR, binário pré-compilado) — cliente de banco de dados GUI |
 | Storage | 1 | `storage/install/1-windows-mounts.sh` | Monta **unidades Windows (NTFS via `ntfs3`)** escolhidas por fzf em `/mnt/<rótulo>` com `nofail` + `x-systemd.automount` (não quebra o boot/login se o disco falhar) + atalho humano `~/<rótulo>`; backup + validação do `/etc/fstab` |
 
 ---
@@ -86,6 +89,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **playerctl** / **brightnessctl** — teclas de mídia e OSD de brilho
 - **xwayland-satellite** — suporte a apps X11
 - **xdg-desktop-portal-gtk** + **xdg-desktop-portal-gnome** — portais (file picker, screencast)
+- **brave-origin-bin** — navegador (Widevine/DRM configurado direto em `brave://settings`)
 
 ### Shell / barra (via `pacman` + AUR)
 - **dms-shell** (DankMaterialShell) — barra e UI Material 3 sobre quickshell; CLI `dms`
@@ -120,6 +124,8 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **.NET SDK** + **ASP.NET runtime** — desenvolvimento .NET (Rider)
 - **Claude Code** (`claude`) — com **perfis isolados**: a função `c` lê `~/.claude_profiles.json` (`{ "Nome": { "WorkDir": ... } }`), define `CLAUDE_CONFIG_DIR` por perfil (config/login isolados) e roda na pasta atual. `c` (seletor) · `c add <nome> [dir]` · `c ls` · `c rm <nome>`. `CLAUDE.md` global versionado em `dev/claude/`. Os perfis são perguntados no setup (`6-claude-profiles.sh`)
 - **Headroom** (`headroom-ai`, via `uv tool`) — compressão de contexto p/ o Claude Code. A função `c` lança via `headroom wrap claude` (sobe o proxy e roteia a API) em qualquer perfil
+- **claude-hud** ([jarrodwatts/claude-hud](https://github.com/jarrodwatts/claude-hud)) — plugin de marketplace do Claude Code; HUD na statusline (contexto, tools, agents, todos), instalado e configurado em todos os perfis
+- **Beekeeper Studio** (AUR, `beekeeper-studio-bin`) — cliente de banco de dados GUI
 
 ### Storage
 - **ntfs-3g** (tools) + driver **`ntfs3`** (kernel) — monta unidades Windows (NTFS) com `nofail`/automount; atalho `~/<rótulo>`
@@ -157,11 +163,13 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 dotfiles-cachyos/
 ├── setup.sh                      # orquestrador (menu de categorias)
 ├── lib/install-helpers.sh        # pacman/AUR, symlink, serviços, log+resumo
+├── .githooks/pre-commit          # bloqueia segredos no staging (git config core.hooksPath .githooks)
 ├── desktop/                      # categoria Desktop
-│   ├── install/                  # 1-niri 2-dms 3-greeter 4-symlinks 5-wallpapers
+│   ├── install/                  # 0-monitors 1-niri 2-dms 3-greeter 4-symlinks 5-wallpapers 6-profile-picture 7-browser
 │   ├── niri/config.kdl           # → ~/.config/niri/config.kdl
 │   ├── dms/
 │   │   ├── settings.json         # → ~/.config/DankMaterialShell/settings.json
+│   │   ├── profile.png           # → foto de perfil (AccountsService)
 │   │   └── greeter-resync.sh     # → ~/.config/DankMaterialShell/ (auto-resync)
 │   └── systemd/                  # → ~/.config/systemd/user/ (path+service do resync)
 ├── terminal/                     # categoria Terminal
@@ -174,10 +182,11 @@ dotfiles-cachyos/
 │   ├── install/                  # 1-gnome-keyring 2-symlinks
 │   └── environment.d/10-ssh-agent.conf  # → ~/.config/environment.d/
 ├── shell/                        # categoria Shell
-│   ├── install/                  # 1-zsh 2-symlinks
+│   ├── install/                  # 1-zsh 2-symlinks 3-configure-zsh
 │   └── zsh/.zshrc                # → ~/.zshrc
 ├── dev/                          # categoria Dev
-│   └── install/                  # 1-jetbrains-toolbox
+│   ├── install/                  # 1-jetbrains-toolbox..4-runtimes 5-claude-code 6-claude-profiles 7-headroom 8-claude-hud 9-beekeeper-studio
+│   └── claude/                   # CLAUDE.md global + claude.zsh (função `c`, perfis) → linkados no .zshrc
 └── storage/                      # categoria Storage
     └── install/                  # 1-windows-mounts (NTFS/ntfs3, nofail)
 ```
