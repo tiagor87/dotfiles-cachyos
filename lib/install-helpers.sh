@@ -74,15 +74,52 @@ repo_install() {
 }
 
 # ---------------------------------------------------------------------------
-# AUR (via pacman)
+# AUR (yay / paru)
 # ---------------------------------------------------------------------------
+# Os pacotes abaixo (temas -git, *-bin, jetbrains-toolbox, docker-desktop,
+# antigravity-cli) NÃO existem nos repositórios oficiais/CachyOS, então o
+# pacman puro não os instala — precisam ser construídos via helper de AUR.
+
+aur_helper() {
+    local h
+    for h in yay paru; do command -v "$h" >/dev/null 2>&1 && { echo "$h"; return; }; done
+}
 
 # aur_install <pkg...>
-# Mantido por compatibilidade com os scripts de instalação: no CachyOS os
-# pacotes usados aqui vêm dos repositórios acessíveis pelo pacman, então
-# instalamos com o mesmo caminho de repo_install em vez de yay/paru.
 aur_install() {
-    repo_install "$@"
+    local helper; helper=$(aur_helper)
+    if [[ -z $helper ]]; then
+        local pkg
+        for pkg in "$@"; do
+            pkg_status "$pkg" "✗ sem helper de AUR (yay/paru)" "$C_RED"
+            log_entry aur "$pkg" failed "instale yay ou paru, ou instale $pkg manualmente"
+        done
+        return
+    fi
+    # Prima o sudo com prompt VISÍVEL antes de chamar o yay/paru. Builds do AUR
+    # (makepkg) são interativos/longos — NÃO redirecionamos a saída, senão o
+    # prompt de senha some e a instalação parece travada.
+    sudo -v || { c_err "sudo recusado — abortando instalação do AUR."; return 1; }
+    local pkg before after
+    for pkg in "$@"; do
+        before=$(pkg_version "$pkg")
+        c_info "AUR: compilando/instalando $pkg via $helper (mostra a saída; pode demorar)..."
+        "$helper" -S --needed --noconfirm "$pkg"
+        after=$(pkg_version "$pkg")
+        if [[ -z $after ]]; then
+            pkg_status "$pkg" "✗ falhou" "$C_RED"
+            log_entry aur "$pkg" failed "$helper -S $pkg falhou"
+        elif [[ -z $before ]]; then
+            pkg_status "$pkg" "✓ $after" "$C_GREEN"
+            log_entry aur "$pkg" installed "$after"
+        elif [[ $before != "$after" ]]; then
+            pkg_status "$pkg" "↑ $before → $after" "$C_YELLOW"
+            log_entry aur "$pkg" updated "$before → $after"
+        else
+            pkg_status "$pkg" "= já instalado ($after)" "$C_DIM"
+            log_entry aur "$pkg" skipped "$after"
+        fi
+    done
 }
 
 # ---------------------------------------------------------------------------
