@@ -13,6 +13,12 @@ if ! command -v dms >/dev/null 2>&1; then
     return 0 2>/dev/null || exit 0
 fi
 
+# 0) Binário do greeter. O `dms greeter install` escreve no config do greetd o
+#    comando /usr/bin/dms-greeter, MAS não instala o pacote que o fornece — e
+#    ele não é dependência do dms-shell. Sem isso o boot falha com
+#    "/usr/bin/dms-greeter: Arquivo ou diretório inexistente". Instalamos antes.
+aur_install greetd-dms-greeter-git
+
 # 1) Instala greetd + DMS greeter (substitui o SDDM). Cuida do próprio sudo.
 if dms greeter status >/dev/null 2>&1 && [[ -f /etc/greetd/config.toml ]]; then
     pkg_status "dms greeter" "= já instalado" "$C_DIM"
@@ -48,13 +54,22 @@ else
 fi
 
 # 2) Sincroniza tema + WALLPAPER (o login passa a mostrar seu wallpaper atual).
-if dms greeter sync -y; then
+#    O `dms greeter sync` pode falhar sem deixar razão no resumo — capturamos a
+#    saída (mostrada ao vivo via tee, p/ o prompt do sudo continuar visível) e
+#    extraímos a última linha de erro para o status e o log.
+sync_out=$(mktemp)
+dms greeter sync -y 2>&1 | tee "$sync_out"
+sync_rc=${PIPESTATUS[0]}
+if (( sync_rc == 0 )); then
     pkg_status "greeter: tema + wallpaper" "✓ sincronizado" "$C_GREEN"
     log_entry greeter sync configured "tema/wallpaper sincronizados"
 else
-    pkg_status "greeter: tema + wallpaper" "! verifique 'dms greeter sync'" "$C_YELLOW"
-    log_entry greeter sync failed "dms greeter sync"
+    # Última linha significativa (fatal/erro), sem códigos de cor ANSI.
+    reason=$(sed 's/\x1b\[[0-9;]*m//g' "$sync_out" | grep -iE 'fatal|error|erro|fail' | tail -1 | sed 's/^[[:space:]]*//')
+    pkg_status "greeter: tema + wallpaper" "! ${reason:-verifique 'dms greeter sync' (rc=$sync_rc)}" "$C_YELLOW"
+    log_entry greeter sync failed "${reason:-dms greeter sync (rc=$sync_rc)}"
 fi
+rm -f "$sync_out"
 
 # 3) Auto-unlock do keyring no login (gnome-keyring). O DMS gerencia só
 #    u2f/fprintd no PAM do greetd; adicionamos o pam_gnome_keyring num bloco
