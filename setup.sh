@@ -26,6 +26,7 @@ fi
 # --- Definição de categorias (ordem importa) -------------------------------
 # Formato: "Nome|descrição|dir1[:dir2...]" (dirs relativos a DOTFILES_ROOT)
 CATEGORIES=(
+    "Base|Helper de AUR (yay) + base-devel/git — pré-requisito p/ pacotes do AUR|base/install"
     "Desktop|niri (WM) + DankMaterialShell + greeter do DMS (greetd)|desktop/install"
     "Terminal|WezTerm (panes nativos + cores Material You)|terminal/install"
     "Boot|Plymouth (splash) + tema do Limine — Catppuccin Mocha|boot/install"

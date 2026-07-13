@@ -49,6 +49,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 
 | Categoria | # | Script | Responsabilidade |
 |-----------|---|--------|------------------|
+| Base | 1 | `base/install/1-yay.sh` | Instala o **yay** (helper de AUR, do repo CachyOS) + **base-devel/git** — pré-requisito para as etapas que instalam pacotes do AUR |
 | Desktop | 0 | `desktop/install/0-monitors.sh` | Configura os **monitores**: resolução + **refresh máximos** (gera `~/.config/niri/outputs.kdl`, incluído pelo `config.kdl`); pergunta rotação/reposição; portrait → coluna 100%. Roda dentro da sessão niri |
 | Desktop | 1 | `desktop/install/1-niri.sh` | Instala o **niri** + utilitários da sessão (fuzzel, swaylock, swaybg, playerctl, brightnessctl, xwayland-satellite, portais XDG) |
 | Desktop | 2 | `desktop/install/2-dms.sh` | Instala o **DankMaterialShell** (`dms-shell`) + deps (matugen, wl-clipboard, cliphist, cava, qt6-multimedia, inter-font, ícones Material Symbols do AUR) e habilita o `dms.service` (autostart) |
@@ -164,6 +165,8 @@ dotfiles-cachyos/
 ├── setup.sh                      # orquestrador (menu de categorias)
 ├── lib/install-helpers.sh        # pacman/AUR, symlink, serviços, log+resumo
 ├── .githooks/pre-commit          # bloqueia segredos no staging (git config core.hooksPath .githooks)
+├── base/                         # categoria Base
+│   └── install/                  # 1-yay (helper de AUR + base-devel/git)
 ├── desktop/                      # categoria Desktop
 │   ├── install/                  # 0-monitors 1-niri 2-dms 3-greeter 4-symlinks 5-wallpapers 6-profile-picture 7-browser
 │   ├── niri/config.kdl           # → ~/.config/niri/config.kdl
