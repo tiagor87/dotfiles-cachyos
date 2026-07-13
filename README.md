@@ -51,7 +51,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 |-----------|---|--------|------------------|
 | Desktop | 0 | `desktop/install/0-monitors.sh` | Configura os **monitores**: resolução + **refresh máximos** (gera `~/.config/niri/outputs.kdl`, incluído pelo `config.kdl`); pergunta rotação/reposição; portrait → coluna 100%. Roda dentro da sessão niri |
 | Desktop | 1 | `desktop/install/1-niri.sh` | Instala o **niri** + utilitários da sessão (fuzzel, swaylock, swaybg, playerctl, brightnessctl, xwayland-satellite, portais XDG) |
-| Desktop | 2 | `desktop/install/2-dms.sh` | Instala o **DankMaterialShell** (`dms-shell`) + deps (matugen, wl-clipboard, cliphist, cava, qt6-multimedia, inter-font, ícones Material Symbols do AUR) e habilita o `dms.service` (autostart) |
+| Desktop | 2 | `desktop/install/2-dms.sh` | Instala o **DankMaterialShell** (`dms-shell`) + deps (matugen, wl-clipboard, cliphist, cava, qt6-multimedia, inter-font, ícones Material Symbols) e habilita o `dms.service` (autostart) |
 | Desktop | 3 | `desktop/install/3-greeter.sh` | Login via **greeter do DMS** (greetd): `dms greeter install` (substitui o SDDM) + `sync` (wallpaper dinâmico); adiciona `pam_gnome_keyring` ao `/etc/pam.d/greetd` (auto-unlock) e confirma numlock. ⚠️ crítico de login |
 | Desktop | 4 | `desktop/install/4-symlinks.sh` | **Linka os configs** do repo: `config.kdl` → `~/.config/niri/` e `settings.json` → `~/.config/DankMaterialShell/`; cria stubs dos `include`s auto-gerados e valida o config do niri |
 | Desktop | 5 | `desktop/install/5-wallpapers.sh` | Monta a **biblioteca de wallpapers** em **pasta única** (`~/<Pictures>/Wallpapers`, prefixo por coleção) p/ a ciclagem do DMS percorrer tudo: copia a coleção local do CachyOS; coleções de anime/games/Catppuccin são opt-in (`DOTFILES_WALLPAPERS_FETCH=1`) |
@@ -66,15 +66,15 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Shell | 1 | `shell/install/1-zsh.sh` | Instala **zsh** + **fzf** + plugins (autosuggestions, syntax-highlighting), **Oh My Zsh** (unattended) e define o zsh como shell padrão (`chsh`) |
 | Shell | 2 | `shell/install/2-symlinks.sh` | Linka o `.zshrc` → `~/.zshrc` |
 | Shell | 3 | `shell/install/3-configure-zsh.sh` | **Config interativa** (via fzf): escolhe `ZSH_THEME` e os `plugins` e grava no `.zshrc` versionado. Pula sem TTY/fzf |
-| Dev | 1 | `dev/install/1-jetbrains-toolbox.sh` | Instala o **JetBrains Toolbox** (AUR) — gerencia Rider, IntelliJ, etc. |
-| Dev | 2 | `dev/install/2-docker-desktop.sh` | Instala o **Docker Desktop** (AUR) e **corrige o login**: gera chave GPG + `pass init` (o credential helper do Docker no Linux usa `pass`; sem isso o Sign in não persiste) |
+| Dev | 1 | `dev/install/1-jetbrains-toolbox.sh` | Instala o **JetBrains Toolbox** (via pacman) — gerencia Rider, IntelliJ, etc. |
+| Dev | 2 | `dev/install/2-docker-desktop.sh` | Instala o **Docker Desktop** (via pacman) e **corrige o login**: gera chave GPG + `pass init` (o credential helper do Docker no Linux usa `pass`; sem isso o Sign in não persiste) |
 | Dev | 3 | `dev/install/3-cli-tools.sh` | Instala **bun** + **AWS CLI v2** (repo oficial) |
 | Dev | 4 | `dev/install/4-runtimes.sh` | Instala **Node.js** + **npm** e **.NET SDK** + **ASP.NET runtime** (repo oficial) |
 | Dev | 5 | `dev/install/5-claude-code.sh` | Instala o **Claude Code** (+ jq), liga o `CLAUDE.md` global e a função `c` de **perfis isolados** (`CLAUDE_CONFIG_DIR` por perfil) ao `.zshrc`; seed do perfil `default` |
 | Dev | 6 | `dev/install/6-claude-profiles.sh` | **Pergunta os perfis** do Claude Code durante a instalação (cria/edita em `~/.claude_profiles.json`, com `CLAUDE.md` linkado por perfil) |
 | Dev | 7 | `dev/install/7-headroom.sh` | Instala o **Headroom** (compressão de contexto, via `uv tool`). A integração é na função `c`: ela lança `headroom wrap claude` por perfil — todos os perfis roteiam pelo Headroom |
 | Dev | 8 | `dev/install/8-claude-hud.sh` | Instala o **claude-hud** (HUD de statusline: contexto, tools, agents, todos) em **todos os perfis** do Claude Code, lendo `~/.claude_profiles.json`; configura o `statusLine` de cada perfil via `claude plugin install`. Idempotente por perfil |
-| Dev | 9 | `dev/install/9-beekeeper-studio.sh` | Instala o **Beekeeper Studio** (AUR, binário pré-compilado) — cliente de banco de dados GUI |
+| Dev | 9 | `dev/install/9-beekeeper-studio.sh` | Instala o **Beekeeper Studio** (via pacman, binário pré-compilado) — cliente de banco de dados GUI |
 | Storage | 1 | `storage/install/1-windows-mounts.sh` | Monta **unidades Windows (NTFS via `ntfs3`)** escolhidas por fzf em `/mnt/<rótulo>` com `nofail` + `x-systemd.automount` (não quebra o boot/login se o disco falhar) + atalho humano `~/<rótulo>`; backup + validação do `/etc/fstab` |
 
 ---
@@ -91,14 +91,14 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **xdg-desktop-portal-gtk** + **xdg-desktop-portal-gnome** — portais (file picker, screencast)
 - **brave-origin-bin** — navegador (Widevine/DRM configurado direto em `brave://settings`)
 
-### Shell / barra (via `pacman` + AUR)
+### Shell / barra (via `pacman`)
 - **dms-shell** (DankMaterialShell) — barra e UI Material 3 sobre quickshell; CLI `dms`
 - **matugen** — cores dinâmicas (Material You)
 - **wl-clipboard** + **cliphist** — histórico de clipboard
 - **cava** — visualizador de áudio
 - **qt6-multimedia** — sons do sistema
 - **inter-font** — fonte de texto do DMS
-- **ttf-material-symbols-variable-git** (AUR) — ícones do DMS
+- **ttf-material-symbols-variable-git** — ícones do DMS
 
 ### Login / greeter (via `dms greeter` → greetd)
 - **greetd** + **greeter do DMS** — a própria UI do DMS na tela de login: **wallpaper dinâmico** (acompanha o desktop via `dms greeter sync`), cores **Material You**, remember-last-session/user. Substitui o SDDM (`dms greeter install`; reverter com `dms greeter uninstall`)
@@ -115,9 +115,9 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **fzf** — fuzzy finder (`Ctrl+R` histórico, `Ctrl+T` arquivos, `Alt+C` cd) via plugin do OMZ
 - **zsh-autosuggestions** + **zsh-syntax-highlighting** (pacman) — sugestões e realce na linha de comando
 
-### Dev (via `pacman` + AUR)
-- **JetBrains Toolbox** (AUR) — gerencia Rider, IntelliJ, etc.
-- **Docker Desktop** (AUR) — autostart no login (serviço de usuário); login corrigido via `pass`/GPG
+### Dev (via `pacman`)
+- **JetBrains Toolbox** — gerencia Rider, IntelliJ, etc.
+- **Docker Desktop** — autostart no login (serviço de usuário); login corrigido via `pass`/GPG
 - **bun** — runtime/toolkit JS
 - **AWS CLI v2** — `aws`
 - **Node.js** + **npm** — runtime JS
@@ -125,7 +125,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **Claude Code** (`claude`) — com **perfis isolados**: a função `c` lê `~/.claude_profiles.json` (`{ "Nome": { "WorkDir": ... } }`), define `CLAUDE_CONFIG_DIR` por perfil (config/login isolados) e roda na pasta atual. `c` (seletor) · `c add <nome> [dir]` · `c ls` · `c rm <nome>`. `CLAUDE.md` global versionado em `dev/claude/`. Os perfis são perguntados no setup (`6-claude-profiles.sh`)
 - **Headroom** (`headroom-ai`, via `uv tool`) — compressão de contexto p/ o Claude Code. A função `c` lança via `headroom wrap claude` (sobe o proxy e roteia a API) em qualquer perfil
 - **claude-hud** ([jarrodwatts/claude-hud](https://github.com/jarrodwatts/claude-hud)) — plugin de marketplace do Claude Code; HUD na statusline (contexto, tools, agents, todos), instalado e configurado em todos os perfis
-- **Beekeeper Studio** (AUR, `beekeeper-studio-bin`) — cliente de banco de dados GUI
+- **Beekeeper Studio** (`beekeeper-studio-bin`) — cliente de banco de dados GUI
 
 ### Storage
 - **ntfs-3g** (tools) + driver **`ntfs3`** (kernel) — monta unidades Windows (NTFS) com `nofail`/automount; atalho `~/<rótulo>`
@@ -162,7 +162,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 ```
 dotfiles-cachyos/
 ├── setup.sh                      # orquestrador (menu de categorias)
-├── lib/install-helpers.sh        # pacman/AUR, symlink, serviços, log+resumo
+├── lib/install-helpers.sh        # pacman, symlink, serviços, log+resumo
 ├── .githooks/pre-commit          # bloqueia segredos no staging (git config core.hooksPath .githooks)
 ├── desktop/                      # categoria Desktop
 │   ├── install/                  # 0-monitors 1-niri 2-dms 3-greeter 4-symlinks 5-wallpapers 6-profile-picture 7-browser
