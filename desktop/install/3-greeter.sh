@@ -29,6 +29,24 @@ else
     fi
 fi
 
+# 1b) Garante que o login GRÁFICO sobe no boot. O `dms greeter install`
+#     registra o greetd, mas em instalações enxutas o systemd pode estar em
+#     multi-user.target (modo texto): aí o greetd (WantedBy=graphical.target)
+#     nunca inicia e o boot cai no TTY. Reforçamos os dois — ambos idempotentes.
+enable_system_service greetd.service
+
+default_target=$(systemctl get-default 2>/dev/null)
+if [[ $default_target == graphical.target ]]; then
+    pkg_status "boot: graphical.target" "= já é o padrão" "$C_DIM"
+    log_entry service default-target skipped "já graphical.target"
+elif sudo systemctl set-default graphical.target >/dev/null 2>&1; then
+    pkg_status "boot: graphical.target" "✓ definido (era ${default_target:-?})" "$C_GREEN"
+    log_entry service default-target configured "set-default graphical.target (era ${default_target:-?})"
+else
+    pkg_status "boot: graphical.target" "✗ falhou" "$C_RED"
+    log_entry service default-target failed "systemctl set-default graphical.target"
+fi
+
 # 2) Sincroniza tema + WALLPAPER (o login passa a mostrar seu wallpaper atual).
 if dms greeter sync -y; then
     pkg_status "greeter: tema + wallpaper" "✓ sincronizado" "$C_GREEN"
