@@ -9,6 +9,11 @@
 local wezterm = require("wezterm")
 local config = wezterm.config_builder()
 
+-- ─── Wayland ─────────────────────────────────────────────────────────────────
+-- Backend nativo Wayland do WezTerm tem bugs de copy/paste com o niri (data-control
+-- protocol); rodando via XWayland o clipboard usa o caminho X11, mais estável.
+config.enable_wayland = false
+
 -- ─── Fonte ───────────────────────────────────────────────────────────────────
 config.font = wezterm.font("JetBrainsMono Nerd Font")
 config.font_size = 11.5
