@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# 1-zsh.sh — zsh + Oh My Zsh + fzf (+ plugins de autosuggestions/syntax-highlight)
+# 1-zsh.sh — zsh + Oh My Zsh + fzf + zoxide (+ plugins de autosuggestions/syntax-highlight)
 set -uo pipefail
 source "${DOTFILES_ROOT:?}/lib/install-helpers.sh"
 
-repo_install zsh fzf zsh-autosuggestions zsh-syntax-highlighting
+repo_install zsh fzf zsh-autosuggestions zsh-syntax-highlighting zoxide
 
 # Oh My Zsh — instalação não-interativa que NÃO troca o shell nem mexe no
 # ~/.zshrc (gerenciamos o .zshrc por symlink no 2-symlinks.sh).
