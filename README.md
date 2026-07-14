@@ -58,6 +58,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Desktop | 5 | `desktop/install/5-wallpapers.sh` | Monta a **biblioteca de wallpapers** em **pasta única** (`~/<Pictures>/Wallpapers`, prefixo por coleção) p/ a ciclagem do DMS percorrer tudo: copia a coleção local do CachyOS; coleções de anime/games/Catppuccin são opt-in (`DOTFILES_WALLPAPERS_FETCH=1`) |
 | Desktop | 6 | `desktop/install/6-profile-picture.sh` | Define a **foto de perfil** (`desktop/dms/profile.png`) via AccountsService (sem sudo) — usada pelo DMS/lock screen. Idempotente |
 | Desktop | 7 | `desktop/install/7-browser.sh` | Instala o **Brave Origin** (repo oficial CachyOS); Widevine (DRM) via `brave://settings`, sem pacote extra |
+| Desktop | 8 | `desktop/install/8-keyboard.sh` | **Layout de teclado** via `localectl set-x11-keymap` (niri lê do `org.freedesktop.locale1`): escolhe entre BR ABNT2 ou US Intl com a tecla "/" do ABNT2 preservada por uma variante xkb custom (`desktop/xkb/symbols/custom`, linkada para `~/.config/xkb/`). Interativo; pula sem TTY |
 | Terminal | 1 | `terminal/install/1-wezterm.sh` | Instala o **WezTerm** + **JetBrainsMono Nerd Font** + **nodejs** (equalize de panes) |
 | Terminal | 2 | `terminal/install/2-symlinks.sh` | Linka `wezterm.lua`/`equalize.js` → `~/.config/wezterm/`, cria `~/.config/wezterm/colors/` (cores do DMS) e valida a config do WezTerm |
 | Boot | 1 | `boot/install/1-limine-theme.sh` | Garante a paleta **Catppuccin Mocha** no `/boot/limine.conf` (idempotente, backup + checagem de sanidade das entradas; preserva o wallpaper/splash) |
@@ -168,8 +169,9 @@ dotfiles-cachyos/
 ├── base/                         # categoria Base
 │   └── install/                  # 1-yay (helper de AUR + base-devel/git)
 ├── desktop/                      # categoria Desktop
-│   ├── install/                  # 0-monitors 1-niri 2-dms 3-greeter 4-symlinks 5-wallpapers 6-profile-picture 7-browser
+│   ├── install/                  # 0-monitors 1-niri 2-dms 3-greeter 4-symlinks 5-wallpapers 6-profile-picture 7-browser 8-keyboard
 │   ├── niri/config.kdl           # → ~/.config/niri/config.kdl
+│   ├── xkb/symbols/custom        # → ~/.config/xkb/symbols/ (variante us_abnt2)
 │   ├── dms/
 │   │   ├── settings.json         # → ~/.config/DankMaterialShell/settings.json
 │   │   ├── profile.png           # → foto de perfil (AccountsService)
