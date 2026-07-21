@@ -51,7 +51,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 |-----------|---|--------|------------------|
 | Base | 1 | `base/install/1-yay.sh` | Instala o **yay** (helper de AUR, do repo CachyOS) + **base-devel/git** — pré-requisito para as etapas que instalam pacotes do AUR |
 | Desktop | 0 | `desktop/install/0-monitors.sh` | Configura os **monitores**: resolução + **refresh máximos** (gera `~/.config/niri/outputs.kdl`, incluído pelo `config.kdl`); pergunta rotação/reposição; portrait → coluna 100%. Roda dentro da sessão niri |
-| Desktop | 1 | `desktop/install/1-niri.sh` | Instala o **niri** + utilitários da sessão (fuzzel, swaylock, swaybg, playerctl, brightnessctl, xwayland-satellite, portais XDG) |
+| Desktop | 1 | `desktop/install/1-niri.sh` | Instala o **niri** + utilitários da sessão (fuzzel, swaybg, playerctl, brightnessctl, xwayland-satellite, portais XDG) — o lock é o do DMS, não o swaylock (ver 9-lock.sh) |
 | Desktop | 2 | `desktop/install/2-dms.sh` | Instala o **DankMaterialShell** (`dms-shell`) + deps (matugen, wl-clipboard, cliphist, cava, qt6-multimedia, inter-font, ícones Material Symbols do AUR) e habilita o `dms.service` (autostart) |
 | Desktop | 3 | `desktop/install/3-greeter.sh` | Login via **greeter do DMS** (greetd): `dms greeter install` (substitui o SDDM) + `sync` (wallpaper dinâmico); adiciona `pam_gnome_keyring` ao `/etc/pam.d/greetd` (auto-unlock) e confirma numlock. ⚠️ crítico de login |
 | Desktop | 4 | `desktop/install/4-symlinks.sh` | **Linka os configs** do repo: `config.kdl` → `~/.config/niri/` e `settings.json` → `~/.config/DankMaterialShell/`; cria stubs dos `include`s auto-gerados e valida o config do niri |
@@ -59,6 +59,8 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Desktop | 6 | `desktop/install/6-profile-picture.sh` | Define a **foto de perfil** (`desktop/dms/profile.png`) via AccountsService (sem sudo) — usada pelo DMS/lock screen. Idempotente |
 | Desktop | 7 | `desktop/install/7-browser.sh` | Instala o **Brave Origin** (repo oficial CachyOS); Widevine (DRM) via `brave://settings`, sem pacote extra |
 | Desktop | 8 | `desktop/install/8-keyboard.sh` | **Layout de teclado** via `localectl set-x11-keymap` (niri lê do `org.freedesktop.locale1`): escolhe entre BR ABNT2 ou US Intl com a tecla "/" do ABNT2 preservada por uma variante xkb custom (`desktop/xkb/symbols/custom`, linkada para `~/.config/xkb/`). Interativo; pula sem TTY |
+| Desktop | 9 | `desktop/install/9-lock.sh` | **Lock da máquina via DMS** (substitui o swaylock): o `Super+Alt+L` chama `dms ipc call lock lock` (mesma UI do greeter) e `lockBeforeSuspend` fica ligado; valida o wiring e **remove o swaylock** (com confirmação, guarda de dependência). Idempotente |
+| Desktop | 10 | `desktop/install/10-fingerprint.sh` | **Sensor de digital** (fprintd), se houver leitor: detecta via D-Bus, **cadastra uma digital** (interativo), liga a digital no lock e no greeter do DMS (`enableFprint`/`greeterEnableFprint`) e, opcional, no **sudo** (`pam_fprintd`, senha como fallback). Sem leitor, sai sem alterar nada |
 | Terminal | 1 | `terminal/install/1-wezterm.sh` | Instala o **WezTerm** + **JetBrainsMono Nerd Font** + **nodejs** (equalize de panes) |
 | Terminal | 2 | `terminal/install/2-symlinks.sh` | Linka `wezterm.lua`/`equalize.js` → `~/.config/wezterm/`, cria `~/.config/wezterm/colors/` (cores do DMS) e valida a config do WezTerm |
 | Boot | 1 | `boot/install/1-limine-theme.sh` | Garante a paleta **Catppuccin Mocha** no `/boot/limine.conf` (idempotente, backup + checagem de sanidade das entradas; preserva o wallpaper/splash) |
@@ -70,7 +72,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Shell | 3 | `shell/install/3-configure-zsh.sh` | **Config interativa** (via fzf): escolhe `ZSH_THEME` e os `plugins` e grava no `.zshrc` versionado. Pula sem TTY/fzf |
 | Dev | 1 | `dev/install/1-jetbrains-toolbox.sh` | Instala o **JetBrains Toolbox** (AUR) — gerencia Rider, IntelliJ, etc. |
 | Dev | 2 | `dev/install/2-docker-desktop.sh` | Instala o **Docker Desktop** (AUR) e **corrige o login**: gera chave GPG + `pass init` (o credential helper do Docker no Linux usa `pass`; sem isso o Sign in não persiste) |
-| Dev | 3 | `dev/install/3-cli-tools.sh` | Instala **bun** + **AWS CLI v2** (repo oficial) |
+| Dev | 3 | `dev/install/3-cli-tools.sh` | Instala **bun** + **AWS CLI v2** + **GitHub CLI** (repo oficial) |
 | Dev | 4 | `dev/install/4-runtimes.sh` | Instala **Node.js** + **npm** e **.NET SDK** + **ASP.NET runtime** (repo oficial) |
 | Dev | 5 | `dev/install/5-claude-code.sh` | Instala o **Claude Code** (+ jq), liga o `CLAUDE.md` global e a função `c` de **perfis isolados** (`CLAUDE_CONFIG_DIR` por perfil) ao `.zshrc`; seed do perfil `default` |
 | Dev | 6 | `dev/install/6-claude-profiles.sh` | **Pergunta os perfis** do Claude Code durante a instalação (cria/edita em `~/.claude_profiles.json`, com `CLAUDE.md` linkado por perfil) |
@@ -86,7 +88,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 ### Compositor & sessão (via `pacman`)
 - **niri** — compositor Wayland scrollable-tiling
 - **fuzzel** — launcher legado (`Mod+D`)
-- **swaylock** — lock screen (`Super+Alt+L`)
+- **lock da máquina** — o **próprio lock do DMS** (`Super+Alt+L` → `dms ipc call lock lock`), mesma UI do greeter; sem swaylock (`fprintd` habilita a digital no lock/greeter)
 - **swaybg** — wallpaper
 - **playerctl** / **brightnessctl** — teclas de mídia e OSD de brilho
 - **xwayland-satellite** — suporte a apps X11
@@ -169,7 +171,7 @@ dotfiles-cachyos/
 ├── base/                         # categoria Base
 │   └── install/                  # 1-yay (helper de AUR + base-devel/git)
 ├── desktop/                      # categoria Desktop
-│   ├── install/                  # 0-monitors 1-niri 2-dms 3-greeter 4-symlinks 5-wallpapers 6-profile-picture 7-browser 8-keyboard
+│   ├── install/                  # 0-monitors 1-niri 2-dms 3-greeter 4-symlinks 5-wallpapers 6-profile-picture 7-browser 8-keyboard 9-lock 10-fingerprint
 │   ├── niri/config.kdl           # → ~/.config/niri/config.kdl
 │   ├── xkb/symbols/custom        # → ~/.config/xkb/symbols/ (variante us_abnt2)
 │   ├── dms/

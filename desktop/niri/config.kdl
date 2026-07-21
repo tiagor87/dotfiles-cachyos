@@ -378,7 +378,7 @@ binds {
     Mod+Shift+Space hotkey-overlay-title="Clipboard (DMS)"    { spawn "dms" "ipc" "call" "clipboard" "toggle"; }
     Mod+Shift+Escape hotkey-overlay-title="Process List (DMS)" { spawn "dms" "ipc" "call" "processlist" "focusOrToggle"; }
     // <<< DMS keybinds
-    Super+Alt+L hotkey-overlay-title="Lock the Screen: swaylock" { spawn "swaylock"; }
+    Super+Alt+L hotkey-overlay-title="Lock the Screen (DMS)" { spawn "dms" "ipc" "call" "lock" "lock"; }
 
     // Use spawn-sh to run a shell command. Do this if you need pipes, multiple commands, etc.
     // Note: the entire command goes as a single argument. It's passed verbatim to `sh -c`.
@@ -665,3 +665,4 @@ include "dms/windowrules.kdl"
 include "dms/outputs.kdl"
 
 include "dms/cursor.kdl"
+include "dms/layout.kdl"

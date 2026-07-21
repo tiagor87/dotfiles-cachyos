@@ -4,12 +4,12 @@ set -uo pipefail
 source "${DOTFILES_ROOT:?}/lib/install-helpers.sh"
 
 # Pacotes: o compositor + tudo que o config.kdl referencia
-# (terminal, launcher, lock, mídia, clipboard) + portais e suporte a X11.
-# Os symlinks dos configs ficam no passo 4-symlinks.sh (padrão dotfiles-windows).
+# (terminal, launcher, mídia, clipboard) + portais e suporte a X11.
+# O lock da máquina é o do DMS (`dms ipc call lock lock`, ver 9-lock.sh), não o
+# swaylock. Os symlinks dos configs ficam no 4-symlinks.sh (padrão dotfiles-win).
 repo_install \
     niri \
     fuzzel \
-    swaylock \
     swaybg \
     playerctl \
     brightnessctl \
