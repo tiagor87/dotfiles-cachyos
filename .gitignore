@@ -10,8 +10,10 @@ dotfiles-install-log.*
 *~
 .DS_Store
 
-# Serena MCP (artefato de projeto, não versionar)
+# MCPs / ferramentas locais (artefatos de projeto, não versionar)
 .serena/
+.tokensave/
+.claude/
 
 # Segredos / overrides locais (nunca versionar — ver ~/.zshenv)
 *.local
