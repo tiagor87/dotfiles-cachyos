@@ -44,3 +44,4 @@ export PATH="/home/tiago/.local/bin:$PATH"
 
 # Secrets e acesso a bancos (kodano) ficam em ~/.zshenv (não versionado),
 # carregado pelo zsh antes deste arquivo.
+export PATH="$HOME/.dotnet:$PATH"
