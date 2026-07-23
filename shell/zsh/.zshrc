@@ -45,3 +45,9 @@ export PATH="/home/tiago/.local/bin:$PATH"
 # Secrets e acesso a bancos (kodano) ficam em ~/.zshenv (não versionado),
 # carregado pelo zsh antes deste arquivo.
 export PATH="$HOME/.dotnet:$PATH"
+
+# Codex CLI + codex-fugu via Headroom (YOLO, sem perfis)
+[[ -r ~/.config/codex/codex.zsh ]] && source ~/.config/codex/codex.zsh
+
+# Antigravity CLI (agy) em modo YOLO
+[[ -r ~/.config/antigravity/agy.zsh ]] && source ~/.config/antigravity/agy.zsh

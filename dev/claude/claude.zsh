@@ -91,7 +91,7 @@ c() {
             --proxy-url "http://127.0.0.1:$port" --force >/dev/null 2>&1
         CLAUDE_CONFIG_DIR="$wd" HONCHO_WORKSPACE_ID="$wsid" \
         HEADROOM_PROXY_URL="http://127.0.0.1:$port" \
-            headroom wrap claude -p "$port" -- --dangerously-skip-permissions ${=args}
+            headroom wrap claude --port "$port" -- --dangerously-skip-permissions ${=args}
     else
         CLAUDE_CONFIG_DIR="$wd" HONCHO_WORKSPACE_ID="$wsid" \
             claude --dangerously-skip-permissions ${=args}
