@@ -80,6 +80,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Dev | 7 | `dev/install/7-headroom.sh` | Instala o **Headroom** (compressão de contexto, via `uv tool`). A integração é na função `c`: ela lança `headroom wrap claude` por perfil — todos os perfis roteiam pelo Headroom |
 | Dev | 8 | `dev/install/8-claude-hud.sh` | Instala o **claude-hud** (HUD de statusline: contexto, tools, agents, todos) em **todos os perfis** do Claude Code, lendo `~/.claude_profiles.json`; configura o `statusLine` de cada perfil via `claude plugin install`. Idempotente por perfil |
 | Dev | 9 | `dev/install/9-beekeeper-studio.sh` | Instala o **Beekeeper Studio** (AUR, binário pré-compilado) — cliente de banco de dados GUI |
+| Dev | 11 | `dev/install/11-posting.sh` | Instala o **Posting** (AUR) — cliente de API HTTP no terminal (TUI), alternativa ao Postman/Insomnia |
 | Storage | 1 | `storage/install/1-windows-mounts.sh` | Monta **unidades Windows (NTFS via `ntfs3`)** escolhidas por fzf em `/mnt/<rótulo>` com `nofail` + `x-systemd.automount` (não quebra o boot/login se o disco falhar) + atalho humano `~/<rótulo>`; backup + validação do `/etc/fstab` |
 
 ---
@@ -131,6 +132,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **Headroom** (`headroom-ai`, via `uv tool`) — compressão de contexto p/ o Claude Code. A função `c` lança via `headroom wrap claude` (sobe o proxy e roteia a API) em qualquer perfil
 - **claude-hud** ([jarrodwatts/claude-hud](https://github.com/jarrodwatts/claude-hud)) — plugin de marketplace do Claude Code; HUD na statusline (contexto, tools, agents, todos), instalado e configurado em todos os perfis
 - **Beekeeper Studio** (AUR, `beekeeper-studio-bin`) — cliente de banco de dados GUI
+- **Posting** (AUR, `posting`) — cliente de API HTTP no terminal (TUI); coleções em `~/.local/share/posting/`, config via `posting locate config`
 
 ### Storage
 - **ntfs-3g** (tools) + driver **`ntfs3`** (kernel) — monta unidades Windows (NTFS) com `nofail`/automount; atalho `~/<rótulo>`
@@ -193,7 +195,7 @@ dotfiles-cachyos/
 │   ├── install/                  # 1-zsh 2-symlinks 3-configure-zsh
 │   └── zsh/.zshrc                # → ~/.zshrc
 ├── dev/                          # categoria Dev
-│   ├── install/                  # 1-jetbrains-toolbox..4-runtimes 5-claude-code 6-claude-profiles 7-headroom 8-claude-hud 9-beekeeper-studio
+│   ├── install/                  # 1-jetbrains-toolbox..4-runtimes 5-claude-code 6-claude-profiles 7-headroom 8-claude-hud 9-beekeeper-studio 11-posting
 │   └── claude/                   # CLAUDE.md global + claude.zsh (função `c`, perfis) → linkados no .zshrc
 └── storage/                      # categoria Storage
     └── install/                  # 1-windows-mounts (NTFS/ntfs3, nofail)
