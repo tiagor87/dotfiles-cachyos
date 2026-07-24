@@ -37,6 +37,9 @@ alias grep='grep --color=auto'
 # ~/.local/bin no PATH (uv tools, headroom wrap)
 export PATH="$HOME/.local/bin:$PATH"
 
+# .NET SDK (instalado via dotnet-install.sh, não pelo pacman)
+export DOTNET_ROOT="$HOME/.dotnet"
+export PATH="$HOME/.dotnet:$PATH"
 
 # >>> Codex installer >>>
 export PATH="/home/tiago/.local/bin:$PATH"
@@ -44,7 +47,6 @@ export PATH="/home/tiago/.local/bin:$PATH"
 
 # Secrets e acesso a bancos (kodano) ficam em ~/.zshenv (não versionado),
 # carregado pelo zsh antes deste arquivo.
-export PATH="$HOME/.dotnet:$PATH"
 
 # Codex CLI + codex-fugu via Headroom (YOLO, sem perfis)
 [[ -r ~/.config/codex/codex.zsh ]] && source ~/.config/codex/codex.zsh
