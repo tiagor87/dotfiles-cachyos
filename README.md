@@ -72,7 +72,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Shell | 2 | `shell/install/2-symlinks.sh` | Linka o `.zshrc` → `~/.zshrc` |
 | Shell | 3 | `shell/install/3-configure-zsh.sh` | **Config interativa** (via fzf): escolhe `ZSH_THEME` e os `plugins` e grava no `.zshrc` versionado. Pula sem TTY/fzf |
 | Dev | 1 | `dev/install/1-jetbrains-toolbox.sh` | Instala o **JetBrains Toolbox** (AUR) — gerencia Rider, IntelliJ, etc. |
-| Dev | 2 | `dev/install/2-docker-desktop.sh` | Instala o **Docker Desktop** (AUR) e **corrige o login**: gera chave GPG + `pass init` (o credential helper do Docker no Linux usa `pass`; sem isso o Sign in não persiste) |
+| Dev | 2 | `dev/install/2-docker-desktop.sh` | Instala o **Docker Desktop** (AUR), **corrige o login** (gera chave GPG + `pass init` — o credential helper do Docker no Linux usa `pass`; sem isso o Sign in não persiste) e **limita os recursos da VM** (`Cpus=4`, `MemoryMiB=4096`, `DiskSizeMiB=131072`): sem isso a VM QEMU sobe com `-smp <todos os cores>` e disputa CPU com o desktop |
 | Dev | 3 | `dev/install/3-cli-tools.sh` | Instala **bun** + **AWS CLI v2** + **Terraform** + **GitHub CLI** (repo oficial) e a **Antigravity CLI** (AUR) |
 | Dev | 4 | `dev/install/4-runtimes.sh` | Instala **Node.js** + **npm** e **.NET SDK** + **ASP.NET runtime** (repo oficial) |
 | Dev | 5 | `dev/install/5-claude-code.sh` | Instala o **Claude Code** (+ jq), liga o `CLAUDE.md` global e a função `c` de **perfis isolados** (`CLAUDE_CONFIG_DIR` por perfil) ao `.zshrc`; seed do perfil `default` |
@@ -124,7 +124,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 
 ### Dev (via `pacman` + AUR)
 - **JetBrains Toolbox** (AUR) — gerencia Rider, IntelliJ, etc.
-- **Docker Desktop** (AUR) — autostart no login (serviço de usuário); login corrigido via `pass`/GPG
+- **Docker Desktop** (AUR) — autostart no login (serviço de usuário); login corrigido via `pass`/GPG. **VM limitada** a 4 vCPUs / 4 GiB RAM / 128 GiB de teto de disco em `~/.docker/desktop/settings-store.json` (vale após `docker desktop restart`). Ajustável por env: `DD_CPUS`, `DD_MEMORY_MIB`, `DD_DISK_MIB`. Reduzir o teto de disco pede confirmação — pode fazer o Docker recriar o `Docker.raw`
 - **bun** — runtime/toolkit JS
 - **AWS CLI v2** — `aws`
 - **Terraform** — `terraform`
