@@ -31,9 +31,10 @@ else
     return 0 2>/dev/null || exit 0
 fi
 
-# IMPORTANTE: `headroom wrap claude` NÃO é um passo de setup — ele sobe o proxy
-# e LANÇA o Claude Code na hora (rodá-lo aqui faz o claude abrir sem stdin e
-# falhar). A integração fica na função `c`: ela lança via `headroom wrap claude`
-# (com o CLAUDE_CONFIG_DIR do perfil), então TODO perfil roteia pelo Headroom.
-c_info "Integração via função 'c' (headroom wrap claude por perfil). Abra um novo shell p/ o PATH valer."
-c_info "Testar à mão:  headroom wrap claude     |  diagnóstico:  headroom doctor"
+# IMPORTANTE: subir o proxy NÃO é um passo de setup — ele fica no ar servindo as
+# requisições, então rodá-lo aqui travaria a instalação. A integração fica na
+# função `c`: ela garante um proxy na porta do perfil (reaproveitando um já de
+# pé) e exporta ANTHROPIC_BASE_URL / OPENAI_BASE_URL apontando pra ele, então
+# TODO perfil roteia pelo Headroom — inclusive o codex chamado pelo Claude.
+c_info "Integração via função 'c' (base URLs → proxy por perfil). Abra um novo shell p/ o PATH valer."
+c_info "Testar à mão:  headroom proxy -p 8787   |  diagnóstico:  headroom doctor"
