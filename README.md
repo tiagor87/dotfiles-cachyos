@@ -73,13 +73,14 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Shell | 3 | `shell/install/3-configure-zsh.sh` | **Config interativa** (via fzf): escolhe `ZSH_THEME` e os `plugins` e grava no `.zshrc` versionado. Pula sem TTY/fzf |
 | Dev | 1 | `dev/install/1-jetbrains-toolbox.sh` | Instala o **JetBrains Toolbox** (AUR) — gerencia Rider, IntelliJ, etc. |
 | Dev | 2 | `dev/install/2-docker-desktop.sh` | Instala o **Docker Desktop** (AUR) e **corrige o login**: gera chave GPG + `pass init` (o credential helper do Docker no Linux usa `pass`; sem isso o Sign in não persiste) |
-| Dev | 3 | `dev/install/3-cli-tools.sh` | Instala **bun** + **AWS CLI v2** + **GitHub CLI** (repo oficial) |
+| Dev | 3 | `dev/install/3-cli-tools.sh` | Instala **bun** + **AWS CLI v2** + **Terraform** + **GitHub CLI** (repo oficial) e a **Antigravity CLI** (AUR) |
 | Dev | 4 | `dev/install/4-runtimes.sh` | Instala **Node.js** + **npm** e **.NET SDK** + **ASP.NET runtime** (repo oficial) |
 | Dev | 5 | `dev/install/5-claude-code.sh` | Instala o **Claude Code** (+ jq), liga o `CLAUDE.md` global e a função `c` de **perfis isolados** (`CLAUDE_CONFIG_DIR` por perfil) ao `.zshrc`; seed do perfil `default` |
 | Dev | 6 | `dev/install/6-claude-profiles.sh` | **Pergunta os perfis** do Claude Code durante a instalação (cria/edita em `~/.claude_profiles.json`, com `CLAUDE.md` linkado por perfil) |
 | Dev | 7 | `dev/install/7-headroom.sh` | Instala o **Headroom** (compressão de contexto, via `uv tool`). A integração é na função `c`: ela lança `headroom wrap claude` por perfil — todos os perfis roteiam pelo Headroom |
 | Dev | 8 | `dev/install/8-claude-hud.sh` | Instala o **claude-hud** (HUD de statusline: contexto, tools, agents, todos) em **todos os perfis** do Claude Code, lendo `~/.claude_profiles.json`; configura o `statusLine` de cada perfil via `claude plugin install`. Idempotente por perfil |
 | Dev | 9 | `dev/install/9-beekeeper-studio.sh` | Instala o **Beekeeper Studio** (AUR, binário pré-compilado) — cliente de banco de dados GUI |
+| Dev | 10 | `dev/install/10-headroom-wrappers.sh` | Instala o **Codex CLI** (`openai-codex`, repo oficial) e liga as funções **`codex`**, **`codex-fugu`** e **`agy`** (Antigravity) ao `.zshrc` — todas em **YOLO + Headroom**. O `codex-fugu` só avisa se o `~/.fugu` não existir (bootstrap manual, pede API key) |
 | Dev | 11 | `dev/install/11-posting.sh` | Instala o **Posting** (AUR) — cliente de API HTTP no terminal (TUI), alternativa ao Postman/Insomnia |
 | Storage | 1 | `storage/install/1-windows-mounts.sh` | Monta **unidades Windows (NTFS via `ntfs3`)** escolhidas por fzf em `/mnt/<rótulo>` com `nofail` + `x-systemd.automount` (não quebra o boot/login se o disco falhar) + atalho humano `~/<rótulo>`; backup + validação do `/etc/fstab` |
 
@@ -126,12 +127,16 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **Docker Desktop** (AUR) — autostart no login (serviço de usuário); login corrigido via `pass`/GPG
 - **bun** — runtime/toolkit JS
 - **AWS CLI v2** — `aws`
+- **Terraform** — `terraform`
+- **GitHub CLI** — `gh`
 - **Node.js** + **npm** — runtime JS
 - **.NET SDK** + **ASP.NET runtime** — desenvolvimento .NET (Rider)
 - **Claude Code** (`claude`) — com **perfis isolados**: a função `c` lê `~/.claude_profiles.json` (`{ "Nome": { "WorkDir": ... } }`), define `CLAUDE_CONFIG_DIR` por perfil (config/login isolados) e roda na pasta atual. `c` (seletor) · `c add <nome> [dir]` · `c ls` · `c rm <nome>`. `CLAUDE.md` global versionado em `dev/claude/`. Os perfis são perguntados no setup (`6-claude-profiles.sh`)
 - **Headroom** (`headroom-ai`, via `uv tool`) — compressão de contexto p/ o Claude Code. A função `c` lança via `headroom wrap claude` (sobe o proxy e roteia a API) em qualquer perfil
 - **claude-hud** ([jarrodwatts/claude-hud](https://github.com/jarrodwatts/claude-hud)) — plugin de marketplace do Claude Code; HUD na statusline (contexto, tools, agents, todos), instalado e configurado em todos os perfis
 - **Beekeeper Studio** (AUR, `beekeeper-studio-bin`) — cliente de banco de dados GUI
+- **Codex CLI** (`openai-codex`) + **codex-fugu** — funções `codex` / `codex-fugu` (`dev/codex/codex.zsh`) sempre em **YOLO** (sem sandbox/confirmação) e via Headroom. O `codex-fugu` depende do bootstrap manual de [SakanaAI/fugu](https://github.com/SakanaAI/fugu) em `~/.fugu`
+- **Antigravity CLI** (AUR, `antigravity-cli`) — função `agy` (`dev/antigravity/agy.zsh`) em modo YOLO
 - **Posting** (AUR, `posting`) — cliente de API HTTP no terminal (TUI); coleções em `~/.local/share/posting/`, config via `posting locate config`
 
 ### Storage
@@ -195,8 +200,10 @@ dotfiles-cachyos/
 │   ├── install/                  # 1-zsh 2-symlinks 3-configure-zsh
 │   └── zsh/.zshrc                # → ~/.zshrc
 ├── dev/                          # categoria Dev
-│   ├── install/                  # 1-jetbrains-toolbox..4-runtimes 5-claude-code 6-claude-profiles 7-headroom 8-claude-hud 9-beekeeper-studio 11-posting
-│   └── claude/                   # CLAUDE.md global + claude.zsh (função `c`, perfis) → linkados no .zshrc
+│   ├── install/                  # 1-jetbrains-toolbox..4-runtimes 5-claude-code 6-claude-profiles 7-headroom 8-claude-hud 9-beekeeper-studio 10-headroom-wrappers 11-posting
+│   ├── claude/                   # CLAUDE.md global + claude.zsh (função `c`, perfis) → linkados no .zshrc
+│   ├── codex/                    # codex.zsh (funções `codex`, `codex-fugu` em YOLO) → ~/.config/codex/
+│   └── antigravity/              # agy.zsh (função `agy` em YOLO) → ~/.config/antigravity/
 └── storage/                      # categoria Storage
     └── install/                  # 1-windows-mounts (NTFS/ntfs3, nofail)
 ```
