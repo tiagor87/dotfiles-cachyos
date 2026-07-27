@@ -1,8 +1,8 @@
 # codex.zsh — Codex CLI e codex-fugu via Headroom (proxy de otimização) + modo YOLO
 #
-# Sem perfis (diferente do claude.zsh): sempre roda na pasta atual, sempre em
-# modo YOLO (--dangerously-bypass-approvals-and-sandbox: sem sandbox, sem
-# confirmação de comandos).
+# Sempre roda na pasta atual, sempre em modo YOLO
+# (--dangerously-bypass-approvals-and-sandbox: sem sandbox, sem confirmação
+# de comandos).
 #
 # Uso:
 #   codex [args...]        → Codex real, via headroom (se instalado) + YOLO

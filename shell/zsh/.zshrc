@@ -31,24 +31,20 @@ alias ll='ls -lah --color=auto'
 alias la='ls -A --color=auto'
 alias grep='grep --color=auto'
 
-# Claude Code com perfis isolados (função c)
+# Claude Code via Headroom (função c)
 [[ -r ~/.config/claude/claude.zsh ]] && source ~/.config/claude/claude.zsh
 
-# ~/.local/bin no PATH (uv tools, headroom wrap)
+# ~/.local/bin no PATH (uv tools)
 export PATH="$HOME/.local/bin:$PATH"
 
 # .NET SDK (instalado via dotnet-install.sh, não pelo pacman)
 export DOTNET_ROOT="$HOME/.dotnet"
 export PATH="$HOME/.dotnet:$PATH"
 
-# >>> Codex installer >>>
-export PATH="/home/tiago/.local/bin:$PATH"
-# <<< Codex installer <<<
-
 # Secrets e acesso a bancos (kodano) ficam em ~/.zshenv (não versionado),
 # carregado pelo zsh antes deste arquivo.
 
-# Codex CLI + codex-fugu via Headroom (YOLO, sem perfis)
+# Codex CLI + codex-fugu via Headroom (YOLO)
 [[ -r ~/.config/codex/codex.zsh ]] && source ~/.config/codex/codex.zsh
 
 # Antigravity CLI (agy) em modo YOLO

@@ -31,7 +31,7 @@ ZSHRC="$DOTFILES_ROOT/shell/zsh/.zshrc"
 if [[ -f $ZSHRC ]] && ! grep -q 'codex/codex.zsh' "$ZSHRC"; then
     {
         echo ''
-        echo '# Codex CLI + codex-fugu via Headroom (YOLO, sem perfis)'
+        echo '# Codex CLI + codex-fugu via Headroom (YOLO)'
         echo '[[ -r ~/.config/codex/codex.zsh ]] && source ~/.config/codex/codex.zsh'
     } >>"$ZSHRC"
     pkg_status ".zshrc" "✓ source das funções codex/codex-fugu" "$C_GREEN"

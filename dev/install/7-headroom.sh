@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 # 7-headroom.sh — Headroom (compressão de contexto) integrado ao Claude Code.
 #
-# Headroom NÃO é um plugin de marketplace; é um CLI/wrapper que intercepta as
-# requisições do Claude Code e comprime o contexto. `headroom wrap claude` é
-# GLOBAL — vale para todas as invocações do claude (logo, todos os perfis).
+# Headroom NÃO é um plugin de marketplace; é um CLI que sobe um proxy local e
+# comprime o contexto das requisições. A integração fica na função `c`
+# (dev/claude/claude.zsh), que chama `headroom wrap claude --1m`.
+#
+# Por que `wrap` e não ANTHROPIC_BASE_URL: apontar a base URL pra um host
+# customizado dispara um gate client-side do Claude Code que desliga a janela de
+# 1M tokens (headroom#1158) e o carregamento de tools sob demanda (headroom#746).
+# O `wrap` contorna os dois; o roteamento por variável de ambiente, não.
 set -uo pipefail
 source "${DOTFILES_ROOT:?}/lib/install-helpers.sh"
 
@@ -11,10 +16,10 @@ source "${DOTFILES_ROOT:?}/lib/install-helpers.sh"
 repo_install uv
 command -v uv >/dev/null 2>&1 || { c_warn "uv ausente — pulei o headroom."; return 0 2>/dev/null || exit 0; }
 
-# Garante ~/.local/bin no PATH (uv tool instala lá; o wrap cria o shim do claude lá).
+# Garante ~/.local/bin no PATH (uv tool instala lá).
 ZSHRC="$DOTFILES_ROOT/shell/zsh/.zshrc"
 if [[ -f $ZSHRC ]] && ! grep -q 'HOME/.local/bin' "$ZSHRC"; then
-    printf '\n# ~/.local/bin no PATH (uv tools, headroom wrap)\nexport PATH="$HOME/.local/bin:$PATH"\n' >>"$ZSHRC"
+    printf '\n# ~/.local/bin no PATH (uv tools)\nexport PATH="$HOME/.local/bin:$PATH"\n' >>"$ZSHRC"
 fi
 export PATH="$HOME/.local/bin:$PATH"
 
@@ -31,10 +36,7 @@ else
     return 0 2>/dev/null || exit 0
 fi
 
-# IMPORTANTE: subir o proxy NÃO é um passo de setup — ele fica no ar servindo as
-# requisições, então rodá-lo aqui travaria a instalação. A integração fica na
-# função `c`: ela garante um proxy na porta do perfil (reaproveitando um já de
-# pé) e exporta ANTHROPIC_BASE_URL / OPENAI_BASE_URL apontando pra ele, então
-# TODO perfil roteia pelo Headroom — inclusive o codex chamado pelo Claude.
-c_info "Integração via função 'c' (base URLs → proxy por perfil). Abra um novo shell p/ o PATH valer."
-c_info "Testar à mão:  headroom proxy -p 8787   |  diagnóstico:  headroom doctor"
+# Subir o proxy NÃO é passo de setup — ele fica no ar servindo requisições, então
+# rodá-lo aqui travaria a instalação. Quem sobe (e reaproveita) é o `wrap`.
+c_info "Integração via função 'c' → headroom wrap claude --1m"
+c_info "Diagnóstico:  headroom doctor   |  economia acumulada:  headroom doctor | grep savings"
