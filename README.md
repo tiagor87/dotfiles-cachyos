@@ -75,10 +75,9 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Dev | 2 | `dev/install/2-docker-desktop.sh` | Instala o **Docker Desktop** (AUR), **corrige o login** (gera chave GPG + `pass init` — o credential helper do Docker no Linux usa `pass`; sem isso o Sign in não persiste) e **limita os recursos da VM** (`Cpus=4`, `MemoryMiB=4096`, `DiskSizeMiB=131072`): sem isso a VM QEMU sobe com `-smp <todos os cores>` e disputa CPU com o desktop |
 | Dev | 3 | `dev/install/3-cli-tools.sh` | Instala **bun** + **AWS CLI v2** + **Terraform** + **GitHub CLI** (repo oficial) e a **Antigravity CLI** (AUR) |
 | Dev | 4 | `dev/install/4-runtimes.sh` | Instala **Node.js** + **npm** e **.NET SDK** + **ASP.NET runtime** (repo oficial) |
-| Dev | 5 | `dev/install/5-claude-code.sh` | Instala o **Claude Code** (+ jq), liga o `CLAUDE.md` global e a função `c` de **perfis isolados** (`CLAUDE_CONFIG_DIR` por perfil) ao `.zshrc`; seed do perfil `default` |
-| Dev | 6 | `dev/install/6-claude-profiles.sh` | **Pergunta os perfis** do Claude Code durante a instalação (cria/edita em `~/.claude_profiles.json`, com `CLAUDE.md` linkado por perfil) |
-| Dev | 7 | `dev/install/7-headroom.sh` | Instala o **Headroom** (compressão de contexto, via `uv tool`). A integração é na função `c`: ela garante o proxy de pé na porta do perfil e exporta `ANTHROPIC_BASE_URL`/`OPENAI_BASE_URL` apontando pra ele — todos os perfis roteiam pelo Headroom |
-| Dev | 8 | `dev/install/8-claude-hud.sh` | Instala o **claude-hud** (HUD de statusline: contexto, tools, agents, todos) em **todos os perfis** do Claude Code, lendo `~/.claude_profiles.json`; configura o `statusLine` de cada perfil via `claude plugin install`. Idempotente por perfil |
+| Dev | 5 | `dev/install/5-claude-code.sh` | Instala o **Claude Code** (+ jq), liga o `CLAUDE.md` global e as skills do repo, e a função `c` ao `.zshrc`. Se já houver config em `~/.claude`, **pergunta se é pra fazer um setup limpo** (zera `settings.json`, plugins e hooks — nunca o login nem o `projects/`) |
+| Dev | 7 | `dev/install/7-headroom.sh` | Instala o **Headroom** (compressão de contexto, via `uv tool`). A integração é na função `c`, que chama `headroom wrap claude --1m` — o `wrap` sobe/reaproveita o proxy sozinho |
+| Dev | 8 | `dev/install/8-claude-hud.sh` | Instala o **claude-hud** (HUD de statusline: contexto, tools, agents, todos) em `~/.claude` e configura o `statusLine` via `claude plugin install`. Idempotente |
 | Dev | 9 | `dev/install/9-beekeeper-studio.sh` | Instala o **Beekeeper Studio** (AUR, binário pré-compilado) — cliente de banco de dados GUI |
 | Dev | 10 | `dev/install/10-headroom-wrappers.sh` | Instala o **Codex CLI** (`openai-codex`, repo oficial) e liga as funções **`codex`**, **`codex-fugu`** e **`agy`** (Antigravity) ao `.zshrc` — todas em **YOLO + Headroom**. O `codex-fugu` só avisa se o `~/.fugu` não existir (bootstrap manual, pede API key) |
 | Dev | 11 | `dev/install/11-posting.sh` | Instala o **Posting** (AUR) — cliente de API HTTP no terminal (TUI), alternativa ao Postman/Insomnia |
@@ -131,9 +130,10 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **GitHub CLI** — `gh`
 - **Node.js** + **npm** — runtime JS
 - **.NET SDK** + **ASP.NET runtime** — desenvolvimento .NET (Rider)
-- **Claude Code** (`claude`) — com **perfis isolados**: a função `c` lê `~/.claude_profiles.json` (`{ "Nome": { "WorkDir": ... } }`), define `CLAUDE_CONFIG_DIR` por perfil (config/login isolados) e roda na pasta atual. `c` (seletor) · `c add <nome> [dir]` · `c ls` · `c rm <nome>`. `CLAUDE.md` global versionado em `dev/claude/`. Os perfis são perguntados no setup (`6-claude-profiles.sh`)
-- **Headroom** (`headroom-ai`, via `uv tool`) — compressão de contexto p/ o Claude Code. A função `c` reaproveita (ou sobe) o proxy na porta do perfil e roteia por env: `ANTHROPIC_BASE_URL` (sem `/v1`), `OPENAI_BASE_URL` (com `/v1`, para o codex que o Claude chama em subprocesso) e `ENABLE_TOOL_SEARCH=true` — esta última é obrigatória, senão o Claude Code desliga o carregamento de tools sob demanda atrás de base URL customizada e infla o contexto
-- **claude-hud** ([jarrodwatts/claude-hud](https://github.com/jarrodwatts/claude-hud)) — plugin de marketplace do Claude Code; HUD na statusline (contexto, tools, agents, todos), instalado e configurado em todos os perfis
+- **Claude Code** (`claude`) — a função `c` (`dev/claude/claude.zsh`) roda na pasta atual, em YOLO, através do Headroom. `c [args...]` · `c --no-hr [args...]` (direto na API, sem Headroom) · `CLAUDE_MODEL=... c` (troca o modelo). O modelo é fixado em `claude-opus-5` porque o `--1m` do Headroom escreve `ANTHROPIC_MODEL=<opus>[1m]` e o `<opus>` default dele é uma geração atrás — **precisa de bump a cada modelo novo**. `CLAUDE.md` global versionado em `dev/claude/`
+- **Headroom** (`headroom-ai`, via `uv tool`) — compressão de contexto p/ o Claude Code, via `headroom wrap claude --1m`. **Não** dá pra trocar o `wrap` por `ANTHROPIC_BASE_URL`: com a base URL apontando pra um host customizado, o Claude Code aplica um gate client-side que desliga a janela de 1M tokens (headroom#1158), o carregamento de tools sob demanda (headroom#746) e o `/remote-control`
+- **RTK** ([rtk-ai/rtk](https://github.com/rtk-ai/rtk)) — camada **complementar** ao Headroom, não concorrente. O Headroom comprime o contexto depois que os tokens já estão na request e trava no `prefix_frozen` (não comprime se isso invalidar o prefixo do prompt cache); o rtk filtra a saída dos comandos de shell **antes** dela virar request, onde não há prefixo pra invalidar. **Não precisa instalar**: o `headroom wrap` embarca o binário em `~/.headroom/bin/rtk`, symlinka em `~/.local/bin/` e registra o hook `PreToolUse` sozinho — nada de `rtk-bin` do AUR, que só criaria um segundo binário disputando o PATH. Economia real: `rtk gain`. Escape por comando: `rtk proxy <cmd>`
+- **claude-hud** ([jarrodwatts/claude-hud](https://github.com/jarrodwatts/claude-hud)) — plugin de marketplace do Claude Code; HUD na statusline (contexto, tools, agents, todos)
 - **Beekeeper Studio** (AUR, `beekeeper-studio-bin`) — cliente de banco de dados GUI
 - **Codex CLI** (`openai-codex`) + **codex-fugu** — funções `codex` / `codex-fugu` (`dev/codex/codex.zsh`) sempre em **YOLO** (sem sandbox/confirmação) e via Headroom. O `codex-fugu` depende do bootstrap manual de [SakanaAI/fugu](https://github.com/SakanaAI/fugu) em `~/.fugu`
 - **Antigravity CLI** (AUR, `antigravity-cli`) — função `agy` (`dev/antigravity/agy.zsh`) em modo YOLO
@@ -200,8 +200,8 @@ dotfiles-cachyos/
 │   ├── install/                  # 1-zsh 2-symlinks 3-configure-zsh
 │   └── zsh/.zshrc                # → ~/.zshrc
 ├── dev/                          # categoria Dev
-│   ├── install/                  # 1-jetbrains-toolbox..4-runtimes 5-claude-code 6-claude-profiles 7-headroom 8-claude-hud 9-beekeeper-studio 10-headroom-wrappers 11-posting
-│   ├── claude/                   # CLAUDE.md global + claude.zsh (função `c`, perfis) → linkados no .zshrc
+│   ├── install/                  # 1-jetbrains-toolbox..4-runtimes 5-claude-code 7-headroom 8-claude-hud 9-beekeeper-studio 10-headroom-wrappers 11-posting
+│   ├── claude/                   # CLAUDE.md global + claude.zsh (função `c`) → linkados no .zshrc
 │   ├── codex/                    # codex.zsh (funções `codex`, `codex-fugu` em YOLO) → ~/.config/codex/
 │   └── antigravity/              # agy.zsh (função `agy` em YOLO) → ~/.config/antigravity/
 └── storage/                      # categoria Storage
