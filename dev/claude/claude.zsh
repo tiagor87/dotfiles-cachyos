@@ -16,6 +16,23 @@
 # velho. Sem o --1m o headroom não toca no modelo, mas a janela fica em 200k:
 # os dois andam juntos, não dá pra ter 1M sem fixar. BUMP A CADA GERAÇÃO NOVA.
 #
+# Flags opt-in do headroom (nenhuma é default — todas são `is_flag` do Click,
+# que resolve pra False):
+#   --code-graph  indexa o cwd e fica com um watcher reindexando ao vivo. O
+#                 índice sob demanda do tokensave já roda sem esta flag (o wrap
+#                 chama `tokensave init/sync` no registro do MCP); ela só
+#                 acrescenta o watcher. RESSALVA: o help diz "only useful when
+#                 the proxy is launched from a project root", e o proxy é
+#                 reaproveitado entre invocações — o primeiro `c` fixa o cwd,
+#                 então um `c` noutro projeto herda o watcher no diretório
+#                 errado.
+#   --memory      memória persistente em SQLite, um DB por workspace
+#                 (.headroom/memory.db). RESSALVA: sobrepõe às camadas que já
+#                 existem — ~/.claude/projects/<proj>/memory/ e o
+#                 tokensave_session_recall. Se as três divergirem, não há
+#                 precedência definida entre elas.
+#   --learn       aprende padrões do tráfego ao vivo e grava no MEMORY.md.
+#
 # ATENÇÃO: o setup do wrap acrescenta `@RTK.md` ao ~/.claude/CLAUDE.md, que é
 # symlink pro repo — ou seja, ele escreve no arquivo VERSIONADO. Se aparecer um
 # diff sozinho em dev/claude/CLAUDE.md, foi isto. Não adianta remover a linha:
@@ -39,5 +56,6 @@ c() {
     # `headroom wrap claude --help`). Cold start do proxy carrega modelos de ML
     # e pode levar dezenas de segundos na primeira invocação.
     ANTHROPIC_MODEL="$CLAUDE_MODEL" \
-        headroom wrap claude --1m -- --dangerously-skip-permissions "$@"
+        headroom wrap claude --1m --code-graph --memory --learn \
+        -- --dangerously-skip-permissions "$@"
 }
