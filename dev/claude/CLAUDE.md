@@ -60,6 +60,11 @@ Invoke when the user's intent matches:
 - Reference code as `path:line` so the user can navigate directly.
 - When reporting task completion, name the success criterion that was met.
 
+## Shell output (rtk)
+Um hook `PreToolUse` reescreve os comandos de Bash para passarem pelo `rtk`, que **filtra a saída** (`git diff` com menos contexto, `pytest`/`npm test` só com as falhas, `cat` com assinaturas em vez do corpo). Ver `@RTK.md` para os meta-comandos.
+- A saída de Bash pode estar **truncada por design** — nunca conclua "não há mais nada" a partir dela.
+- Quando a integridade importa (revisar um diff inteiro, ler um arquivo pra editar), use as tools Read/Grep ou `rtk proxy <cmd>` — nenhum dos dois passa pelo hook.
+
 ## Development Environment
 - Em todo projeto de desenvolvimento, **preferir Dev Containers** (`.devcontainer/`) para isolar SDKs, runtimes e dependências. Só desviar quando o projeto explicitamente exigir setup nativo.
 - Em todo projeto de desenvolvimento, **adotar SDD (Spec-Driven Development) com [SpecKit](https://github.com/github/spec-kit)**: fluxo `specify → clarify → plan → tasks → implement`, com a constitution do projeto governando os princípios.
