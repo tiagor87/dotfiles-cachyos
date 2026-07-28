@@ -111,6 +111,17 @@ input {
 // ~/.config/niri/outputs.kdl. Rode aquele script para (re)configurar.
 include "outputs.kdl"
 
+// Variáveis de ambiente dos processos que o niri spawna.
+//
+// GTK_IM_MODULE: sem um IME rodando (ibus/fcitx), o GTK4 nativo em Wayland usa
+// o text-input-v3 do compositor e não compõe dead keys sozinho — resultado:
+// nada de acento no Ghostty (o WezTerm escapa porque roda em XWayland). O
+// gtk-im-context-simple é o compose embutido do GTK e devolve o us-intl.
+// Se um dia entrar ibus/fcitx aqui, esta linha precisa sair.
+environment {
+    GTK_IM_MODULE "gtk-im-context-simple"
+}
+
 // Settings that influence how windows are positioned and sized.
 // Find more information on the wiki:
 // https://niri-wm.github.io/niri/Configuration:-Layout
