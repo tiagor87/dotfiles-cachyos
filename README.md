@@ -61,8 +61,8 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Desktop | 8 | `desktop/install/8-keyboard.sh` | **Layout de teclado** via `localectl set-x11-keymap` (niri lê do `org.freedesktop.locale1`): escolhe entre BR ABNT2 ou US Intl com a tecla "/" do ABNT2 preservada por uma variante xkb custom (`desktop/xkb/symbols/custom`, linkada para `~/.config/xkb/`). Interativo; pula sem TTY |
 | Desktop | 9 | `desktop/install/9-lock.sh` | **Lock da máquina via DMS** (substitui o swaylock): o `Super+Alt+L` chama `dms ipc call lock lock` (mesma UI do greeter) e `lockBeforeSuspend` fica ligado; valida o wiring e **remove o swaylock** (com confirmação, guarda de dependência). Idempotente |
 | Desktop | 10 | `desktop/install/10-fingerprint.sh` | **Sensor de digital** (fprintd), se houver leitor: detecta via D-Bus, **cadastra uma digital** (interativo), liga a digital no lock e no greeter do DMS (`enableFprint`/`greeterEnableFprint`) e, opcional, no **sudo** (`pam_fprintd`, senha como fallback). Sem leitor, sai sem alterar nada |
-| Terminal | 1 | `terminal/install/1-wezterm.sh` | Instala o **WezTerm** + **JetBrainsMono Nerd Font** + **nodejs** (equalize de panes) |
-| Terminal | 2 | `terminal/install/2-symlinks.sh` | Linka `wezterm.lua`/`equalize.js` → `~/.config/wezterm/`, cria `~/.config/wezterm/colors/` (cores do DMS) e valida a config do WezTerm |
+| Terminal | 1 | `terminal/install/1-wezterm.sh` | Instala o **WezTerm** + **Ghostty** + **JetBrainsMono Nerd Font** + **nodejs** (equalize de panes) |
+| Terminal | 2 | `terminal/install/2-symlinks.sh` | Linka `wezterm.lua`/`equalize.js` → `~/.config/wezterm/` e `config` → `~/.config/ghostty/`, cria as pastas de cores do DMS (`wezterm/colors/`, `ghostty/themes/`) e valida as duas configs |
 | Boot | 1 | `boot/install/1-limine-theme.sh` | Garante a paleta **Catppuccin Mocha** no `/boot/limine.conf` (idempotente, backup + checagem de sanidade das entradas; preserva o wallpaper/splash) |
 | Boot | 2 | `boot/install/2-plymouth.sh` | Instala o tema **Plymouth `darth_vader`** (adi1090x, splash animado) e reconstrói o initramfs |
 | Security | 1 | `security/install/1-gnome-keyring.sh` | Instala **gnome-keyring** + seahorse, habilita o `gcr-ssh-agent.socket` e integra o git (`credential.helper=libsecret`) |
@@ -112,7 +112,8 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **auto-resync do wallpaper**: o path unit `dms-greeter-resync.path` (systemd user) observa o `session.json` do DMS e roda `dms greeter sync` quando você troca o wallpaper — o login acompanha o desktop sozinho
 
 ### Terminal (via `pacman`)
-- **WezTerm** — terminal GPU com **panes/splits nativos** (`Ctrl+\` horizontal, `Ctrl+-` vertical), navegação `Ctrl+Shift+hjkl`/setas, zoom `Ctrl+Shift+Z` e **equalize** `Ctrl+Shift+E` (distribui os panes da aba, via `equalize.js`/node). Tema **Catppuccin Mocha** como fallback, sobrescrito por cores **Material You dinâmicas** geradas pelo DMS (`colors/dank-theme.toml` via matugen) que acompanham o wallpaper (recolore ao vivo pelo watch do config). Terminal padrão do niri (`Mod+T` **e `Mod+Enter`**). `Shift+Enter` = nova linha (CSI u, p/ Claude Code/nvim)
+- **WezTerm** — terminal GPU com **panes/splits nativos** (`Ctrl+\` horizontal, `Ctrl+-` vertical), navegação `Ctrl+Shift+hjkl`/setas, zoom `Ctrl+Shift+Z` e **equalize** `Ctrl+Shift+E` (distribui os panes da aba, via `equalize.js`/node). Tema **Catppuccin Mocha** como fallback, sobrescrito por cores **Material You dinâmicas** geradas pelo DMS (`colors/dank-theme.toml` via matugen) que acompanham o wallpaper (recolore ao vivo pelo watch do config). Abre no `Mod+T` do niri. `Shift+Enter` = nova linha (CSI u, p/ Claude Code/nvim)
+- **Ghostty** — terminal alternativo com a **mesma fonte e o mesmo tema** do WezTerm: JetBrainsMono Nerd Font 11.5, célula 10% mais alta (`adjust-cell-height`, equivale ao `line_height = 1.1`), opacidade 0.92 e Catppuccin Mocha como fallback, sobrescrito pelas cores Material You do DMS (`~/.config/ghostty/themes/dankcolors` via matugen, incluído com `config-file = ?themes/dankcolors`). **Panes com os mesmos atalhos do WezTerm** (`Ctrl+\`/`Ctrl+-` split, `Ctrl+Shift+hjkl`/setas navega, `Ctrl+Shift+Z` zoom, `Ctrl+Shift+E` equaliza — aqui é ação nativa, sem o `equalize.js`); as abas ficam com os defaults do Ghostty. Abre no `Mod+Enter` do niri
 - **JetBrainsMono Nerd Font** — fonte com ícones/ligaduras
 - **nodejs** — roda o `equalize.js` (distribuição igual dos panes)
 
@@ -158,12 +159,15 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 
 | Atalho | Ação |
 |--------|------|
-| `Mod+T` / `Mod+Enter` | abre o terminal (WezTerm) |
+| `Mod+T` | abre o WezTerm |
+| `Mod+Enter` | abre o Ghostty |
 | `Mod+↑` / `Mod+↓` | navega foco (janela na coluna → transborda p/ workspace) |
 | `Mod+Shift+↑/↓` · `Mod+Ctrl+↑/↓` | move a janela entre workspaces |
 | `Mod+J` / `Mod+K` | foco de janela na coluna |
 
 **WezTerm:** `Shift+Enter` = nova linha (CSI u, p/ Claude Code/nvim). Panes: `Ctrl+\`/`Ctrl+-` split, `Ctrl+Shift+hjkl` navega, `Ctrl+Shift+E` equaliza.
+
+**Ghostty:** mesmos atalhos de panes do WezTerm (`Ctrl+\`/`Ctrl+-`, `Ctrl+Shift+hjkl`, `Ctrl+Shift+Z`, `Ctrl+Shift+E`). `Ctrl+Shift+,` recarrega a config. Abas nos defaults: `Ctrl+Shift+T` nova, `Ctrl+Tab`/`Ctrl+Shift+Tab` alterna, `Ctrl+W` fecha.
 
 > A barra sobe automaticamente no login via **`dms.service`** (serviço systemd de usuário, habilitado pelo `2-dms.sh`) — por isso o `spawn-at-startup` do DMS fica comentado no `config.kdl` (evita duplicar o shell). Settings do DMS: ícone de engrenagem na barra, ou `dms ipc call settings toggle`.
 
@@ -189,7 +193,8 @@ dotfiles-cachyos/
 │   └── systemd/                  # → ~/.config/systemd/user/ (path+service do resync)
 ├── terminal/                     # categoria Terminal
 │   ├── install/                  # 1-wezterm 2-symlinks
-│   └── wezterm/                  # wezterm.lua + equalize.js → ~/.config/wezterm/
+│   ├── wezterm/                  # wezterm.lua + equalize.js → ~/.config/wezterm/
+│   └── ghostty/                  # config (fonte/tema do WezTerm) → ~/.config/ghostty/
 ├── boot/                         # categoria Boot
 │   ├── install/                  # 1-limine-theme 2-plymouth
 │   └── limine/catppuccin-mocha.conf
