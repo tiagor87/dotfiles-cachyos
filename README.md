@@ -53,7 +53,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Desktop | 0 | `desktop/install/0-monitors.sh` | Configura os **monitores**: resolução + **refresh máximos** (gera `~/.config/niri/outputs.kdl`, incluído pelo `config.kdl`); pergunta rotação/reposição; portrait → coluna 100%. Roda dentro da sessão niri |
 | Desktop | 1 | `desktop/install/1-niri.sh` | Instala o **niri** + utilitários da sessão (fuzzel, swaybg, playerctl, brightnessctl, xwayland-satellite, portais XDG) — o lock é o do DMS, não o swaylock (ver 9-lock.sh) |
 | Desktop | 2 | `desktop/install/2-dms.sh` | Instala o **DankMaterialShell** (`dms-shell`) + deps (matugen, wl-clipboard, cliphist, cava, qt6-multimedia, inter-font, ícones Material Symbols do AUR) e habilita o `dms.service` (autostart) |
-| Desktop | 3 | `desktop/install/3-greeter.sh` | Login via **greeter do DMS** (greetd): `dms greeter install` (substitui o SDDM) + `sync` (wallpaper dinâmico); adiciona `pam_gnome_keyring` ao `/etc/pam.d/greetd` (auto-unlock) e confirma numlock. ⚠️ crítico de login |
+| Desktop | 3 | `desktop/install/3-greeter.sh` | Login via **greeter do DMS** (greetd): instala `greetd` + `greetd-dms-greeter-git` (pacman/yay), habilita com `dms greeter enable` (substitui o SDDM) + `sync` (wallpaper dinâmico); adiciona `pam_gnome_keyring` ao `/etc/pam.d/greetd` (auto-unlock) e confirma numlock. ⚠️ crítico de login |
 | Desktop | 4 | `desktop/install/4-symlinks.sh` | **Linka os configs** do repo: `config.kdl` → `~/.config/niri/` e `settings.json` → `~/.config/DankMaterialShell/`; cria stubs dos `include`s auto-gerados e valida o config do niri |
 | Desktop | 5 | `desktop/install/5-wallpapers.sh` | Monta a **biblioteca de wallpapers** em **pasta única** (`~/<Pictures>/Wallpapers`, prefixo por coleção) p/ a ciclagem do DMS percorrer tudo: copia a coleção local do CachyOS; coleções de anime/games/Catppuccin são opt-in (`DOTFILES_WALLPAPERS_FETCH=1`) |
 | Desktop | 6 | `desktop/install/6-profile-picture.sh` | Define a **foto de perfil** (`desktop/dms/profile.png`) via AccountsService (sem sudo) — usada pelo DMS/lock screen. Idempotente |
@@ -107,7 +107,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **ttf-material-symbols-variable-git** (AUR) — ícones do DMS
 
 ### Login / greeter (via `dms greeter` → greetd)
-- **greetd** + **greeter do DMS** — a própria UI do DMS na tela de login: **wallpaper dinâmico** (acompanha o desktop via `dms greeter sync`), cores **Material You**, remember-last-session/user. Substitui o SDDM (`dms greeter install`; reverter com `dms greeter uninstall`)
+- **greetd** + **greeter do DMS** — a própria UI do DMS na tela de login: **wallpaper dinâmico** (acompanha o desktop via `dms greeter sync`), cores **Material You**, remember-last-session/user. Substitui o SDDM (pacotes via pacman/yay + `dms greeter enable`; reverter com `dms greeter uninstall`)
 - **numlock** ativo no login (herdado do `config.kdl` do niri) e **auto-unlock do keyring** (`pam_gnome_keyring` no `/etc/pam.d/greetd`)
 - **auto-resync do wallpaper**: o path unit `dms-greeter-resync.path` (systemd user) observa o `session.json` do DMS e roda `dms greeter sync` quando você troca o wallpaper — o login acompanha o desktop sozinho
 
