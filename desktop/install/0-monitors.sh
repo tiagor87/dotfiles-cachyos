@@ -5,6 +5,10 @@
 #
 # - Resolução: maior modo de cada monitor. Refresh: omitimos no `mode`, e o niri
 #   escolhe o MAIOR refresh para aquela resolução automaticamente.
+# - Escala: SEMPRE 1. Sem essa linha o niri escolhe uma escala fracionária pelo
+#   DPI (num 1920x1200 de 14" ele vai pra 1.25), o que reduz a área lógica e
+#   embaça apps XWayland. Com scale 1, 1 px lógico = 1 px físico — e a conta de
+#   largura lógica da reposição abaixo passa a bater com o modo.
 # - Rotação/posição: perguntadas (Enter mantém o atual). Sem TTY, mantém tudo.
 # - Monitor em portrait (90/270) → default-column-width 100% (tela cheia).
 #
@@ -65,10 +69,12 @@ fi
 # --- Gera o outputs.kdl ------------------------------------------------------
 {
     echo "// Gerado por 0-monitors.sh — resolução máxima + refresh máximo (refresh"
-    echo "// omitido = niri escolhe o maior). NÃO edite à mão; rode o script de novo."
+    echo "// omitido = niri escolhe o maior) e escala fixa em 1."
+    echo "// NÃO edite à mão; rode o script de novo."
     for n in "${NAMES[@]}"; do
         echo "output \"$n\" {"
         echo "    mode \"${RES[$n]}\""
+        echo "    scale 1"
         echo "    transform \"${TR[$n]}\""
         echo "    position x=${X[$n]} y=${Y[$n]}"
         case "${TR[$n]}" in

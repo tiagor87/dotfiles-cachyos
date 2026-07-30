@@ -2,9 +2,10 @@
 # 3-greeter.sh — Login via greeter do DMS (greetd): wallpaper dinâmico,
 #                numlock e auto-unlock do keyring.
 #
-# ⚠️  CRÍTICO DE LOGIN. O `dms greeter install` instala o greetd e SUBSTITUI o
-# display manager atual (SDDM). Antes de reiniciar, TESTE o login e mantenha um
-# TTY aberto (Ctrl+Alt+F3). Para reverter:  dms greeter uninstall
+# ⚠️  CRÍTICO DE LOGIN. Instalamos o greetd + o dms-greeter (pacman/yay) e só
+# então habilitamos com `dms greeter enable` — isso SUBSTITUI o display manager
+# atual (SDDM). Antes de reiniciar, TESTE o login e mantenha um TTY aberto
+# (Ctrl+Alt+F3). Para reverter:  dms greeter uninstall
 set -uo pipefail
 source "${DOTFILES_ROOT:?}/lib/install-helpers.sh"
 
@@ -13,24 +14,43 @@ if ! command -v dms >/dev/null 2>&1; then
     return 0 2>/dev/null || exit 0
 fi
 
-# 0) Binário do greeter. O `dms greeter install` escreve no config do greetd o
-#    comando /usr/bin/dms-greeter, MAS não instala o pacote que o fornece — e
-#    ele não é dependência do dms-shell. Sem isso o boot falha com
-#    "/usr/bin/dms-greeter: Arquivo ou diretório inexistente". Instalamos antes.
+# 0) Pacotes: NÓS instalamos os dois (pacman/yay), e deixamos pro dms apenas a
+#    configuração (passo 1). O `dms greeter install` também faria a instalação,
+#    mas de forma opaca (pacman + build de AUR por dentro, com sudo próprio).
+#    - greetd: o daemon. Vem como dependência do greeter, mas pedimos explícito.
+#    - greetd-dms-greeter-git: fornece o /usr/bin/dms-greeter referenciado no
+#      config do greetd, e NÃO é dependência do dms-shell. Sem ele o boot falha
+#      com "/usr/bin/dms-greeter: Arquivo ou diretório inexistente".
+repo_install greetd
 aur_install greetd-dms-greeter-git
 
-# 1) Instala greetd + DMS greeter (substitui o SDDM). Cuida do próprio sudo.
-if dms greeter status >/dev/null 2>&1 && [[ -f /etc/greetd/config.toml ]]; then
-    pkg_status "dms greeter" "= já instalado" "$C_DIM"
-    log_entry greeter install skipped "greetd já configurado"
+# 1) Habilita o DMS greeter no config do greetd (substitui o SDDM/DM anterior).
+#
+# ⚠️  CUIDADO COM O GUARD. O /etc/greetd/config.toml JÁ EXISTE assim que o pacote
+#     greetd é instalado — com a sessão padrão `agreety` (login em modo texto) —
+#     e o `dms greeter status` sai com 0 mesmo com o greeter desabilitado. Usar
+#     esses dois como teste de idempotência (era o caso) faz o script PULAR a
+#     configuração numa instalação do zero: o greetd sobe no agreety e o login
+#     gráfico nunca aparece. O teste real é o config referenciar o dms-greeter.
+#     (o config nem sempre é legível pelo usuário — tenta direto, cai pro sudo)
+greeter_enabled() {
+    grep -q 'dms-greeter' /etc/greetd/config.toml 2>/dev/null \
+        || sudo grep -q 'dms-greeter' /etc/greetd/config.toml 2>/dev/null
+}
+
+if greeter_enabled; then
+    pkg_status "dms greeter" "= já habilitado no greetd" "$C_DIM"
+    log_entry greeter enable skipped "config.toml já aponta pro dms-greeter"
 else
-    c_info "Instalando greetd + DMS greeter (vai pedir sudo / abrir terminal)..."
-    if dms greeter install -y; then
-        pkg_status "dms greeter" "✓ instalado (greetd)" "$C_GREEN"
-        log_entry greeter install configured "greetd + dms greeter"
+    c_info "Habilitando o DMS greeter no greetd (vai pedir sudo)..."
+    dms greeter enable -y
+    if greeter_enabled; then
+        pkg_status "dms greeter" "✓ habilitado (greetd)" "$C_GREEN"
+        log_entry greeter enable configured "dms greeter enable"
     else
         pkg_status "dms greeter" "✗ falhou" "$C_RED"
-        log_entry greeter install failed "dms greeter install"
+        log_entry greeter enable failed "config.toml não aponta pro dms-greeter"
+        c_err "greetd continuaria no agreety (login em modo texto) — NÃO reinicie."
         return 0 2>/dev/null || exit 0
     fi
 fi

@@ -50,10 +50,10 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Categoria | # | Script | Responsabilidade |
 |-----------|---|--------|------------------|
 | Base | 1 | `base/install/1-yay.sh` | Instala o **yay** (helper de AUR, do repo CachyOS) + **base-devel/git** — pré-requisito para as etapas que instalam pacotes do AUR |
-| Desktop | 0 | `desktop/install/0-monitors.sh` | Configura os **monitores**: resolução + **refresh máximos** (gera `~/.config/niri/outputs.kdl`, incluído pelo `config.kdl`); pergunta rotação/reposição; portrait → coluna 100%. Roda dentro da sessão niri |
+| Desktop | 0 | `desktop/install/0-monitors.sh` | Configura os **monitores**: resolução + **refresh máximos** e **escala sempre 1** (sem fracionária: 1 px lógico = 1 px físico) — gera `~/.config/niri/outputs.kdl`, incluído pelo `config.kdl`; pergunta rotação/reposição; portrait → coluna 100%. Roda dentro da sessão niri |
 | Desktop | 1 | `desktop/install/1-niri.sh` | Instala o **niri** + utilitários da sessão (fuzzel, swaybg, playerctl, brightnessctl, xwayland-satellite, portais XDG) — o lock é o do DMS, não o swaylock (ver 9-lock.sh) |
 | Desktop | 2 | `desktop/install/2-dms.sh` | Instala o **DankMaterialShell** (`dms-shell`) + deps (matugen, wl-clipboard, cliphist, cava, qt6-multimedia, inter-font, ícones Material Symbols do AUR) e habilita o `dms.service` (autostart) |
-| Desktop | 3 | `desktop/install/3-greeter.sh` | Login via **greeter do DMS** (greetd): `dms greeter install` (substitui o SDDM) + `sync` (wallpaper dinâmico); adiciona `pam_gnome_keyring` ao `/etc/pam.d/greetd` (auto-unlock) e confirma numlock. ⚠️ crítico de login |
+| Desktop | 3 | `desktop/install/3-greeter.sh` | Login via **greeter do DMS** (greetd): instala `greetd` + `greetd-dms-greeter-git` (pacman/yay), habilita com `dms greeter enable` (substitui o SDDM) + `sync` (wallpaper dinâmico); adiciona `pam_gnome_keyring` ao `/etc/pam.d/greetd` (auto-unlock) e confirma numlock. ⚠️ crítico de login |
 | Desktop | 4 | `desktop/install/4-symlinks.sh` | **Linka os configs** do repo: `config.kdl` → `~/.config/niri/` e `settings.json` → `~/.config/DankMaterialShell/`; cria stubs dos `include`s auto-gerados e valida o config do niri |
 | Desktop | 5 | `desktop/install/5-wallpapers.sh` | Monta a **biblioteca de wallpapers** em **pasta única** (`~/<Pictures>/Wallpapers`, prefixo por coleção) p/ a ciclagem do DMS percorrer tudo: copia a coleção local do CachyOS; coleções de anime/games/Catppuccin são opt-in (`DOTFILES_WALLPAPERS_FETCH=1`) |
 | Desktop | 6 | `desktop/install/6-profile-picture.sh` | Define a **foto de perfil** (`desktop/dms/profile.png`) via AccountsService (sem sudo) — usada pelo DMS/lock screen. Idempotente |
@@ -61,8 +61,8 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Desktop | 8 | `desktop/install/8-keyboard.sh` | **Layout de teclado** via `localectl set-x11-keymap` (niri lê do `org.freedesktop.locale1`): escolhe entre BR ABNT2 (`br`/`abnt2`) e US International (`us`/`pc105`/`intl`, dead keys) — os dois são do dataset padrão do xkb, sem variante custom. Interativo; pula sem TTY. **Acentuação em apps GTK4 nativos** (Ghostty) depende do `GTK_IM_MODULE "gtk-im-context-simple"` no bloco `environment` do `config.kdl` — sem IME, o GTK não compõe dead keys sozinho no Wayland |
 | Desktop | 9 | `desktop/install/9-lock.sh` | **Lock da máquina via DMS** (substitui o swaylock): o `Super+Alt+L` chama `dms ipc call lock lock` (mesma UI do greeter) e `lockBeforeSuspend` fica ligado; valida o wiring e **remove o swaylock** (com confirmação, guarda de dependência). Idempotente |
 | Desktop | 10 | `desktop/install/10-fingerprint.sh` | **Sensor de digital** (fprintd), se houver leitor: detecta via D-Bus, **cadastra uma digital** (interativo), liga a digital no lock e no greeter do DMS (`enableFprint`/`greeterEnableFprint`) e, opcional, no **sudo** (`pam_fprintd`, senha como fallback). Sem leitor, sai sem alterar nada |
-| Terminal | 1 | `terminal/install/1-wezterm.sh` | Instala o **WezTerm** + **Ghostty** + **JetBrainsMono Nerd Font** + **nodejs** (equalize de panes) |
-| Terminal | 2 | `terminal/install/2-symlinks.sh` | Linka `wezterm.lua`/`equalize.js` → `~/.config/wezterm/` e `config` → `~/.config/ghostty/`, cria as pastas de cores do DMS (`wezterm/colors/`, `ghostty/themes/`) e valida as duas configs |
+| Terminal | 1 | `terminal/install/1-ghostty.sh` | Instala o **Ghostty** + **JetBrainsMono Nerd Font** |
+| Terminal | 2 | `terminal/install/2-symlinks.sh` | Linka `config` → `~/.config/ghostty/`, cria a pasta de cores do DMS (`ghostty/themes/`) e valida a config |
 | Boot | 1 | `boot/install/1-limine-theme.sh` | Garante a paleta **Catppuccin Mocha** no `/boot/limine.conf` (idempotente, backup + checagem de sanidade das entradas; preserva o wallpaper/splash) |
 | Boot | 2 | `boot/install/2-plymouth.sh` | Instala o tema **Plymouth `darth_vader`** (adi1090x, splash animado) e reconstrói o initramfs |
 | Security | 1 | `security/install/1-gnome-keyring.sh` | Instala **gnome-keyring** + seahorse, habilita o `gcr-ssh-agent.socket` e integra o git (`credential.helper=libsecret`) |
@@ -81,6 +81,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Dev | 9 | `dev/install/9-beekeeper-studio.sh` | Instala o **Beekeeper Studio** (AUR, binário pré-compilado) — cliente de banco de dados GUI |
 | Dev | 10 | `dev/install/10-headroom-wrappers.sh` | Instala o **Codex CLI** (`openai-codex`, repo oficial) e liga as funções **`codex`**, **`codex-fugu`** e **`agy`** (Antigravity) ao `.zshrc` — todas em **YOLO + Headroom**. O `codex-fugu` só avisa se o `~/.fugu` não existir (bootstrap manual, pede API key) |
 | Dev | 11 | `dev/install/11-posting.sh` | Instala o **Posting** (AUR) — cliente de API HTTP no terminal (TUI), alternativa ao Postman/Insomnia |
+| Dev | 12 | `dev/install/12-herdr.sh` | Instala o **herdr** (AUR, `herdr-bin`) — multiplexador de terminal para agentes de código. Sem config versionado: atalhos nos defaults (prefix `ctrl+b`) |
 | Storage | 1 | `storage/install/1-windows-mounts.sh` | Monta **unidades Windows (NTFS via `ntfs3`)** escolhidas por fzf em `/mnt/<rótulo>` com `nofail` + `x-systemd.automount` (não quebra o boot/login se o disco falhar) + atalho humano `~/<rótulo>`; backup + validação do `/etc/fstab` |
 
 ---
@@ -107,15 +108,13 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **ttf-material-symbols-variable-git** (AUR) — ícones do DMS
 
 ### Login / greeter (via `dms greeter` → greetd)
-- **greetd** + **greeter do DMS** — a própria UI do DMS na tela de login: **wallpaper dinâmico** (acompanha o desktop via `dms greeter sync`), cores **Material You**, remember-last-session/user. Substitui o SDDM (`dms greeter install`; reverter com `dms greeter uninstall`)
+- **greetd** + **greeter do DMS** — a própria UI do DMS na tela de login: **wallpaper dinâmico** (acompanha o desktop via `dms greeter sync`), cores **Material You**, remember-last-session/user. Substitui o SDDM (pacotes via pacman/yay + `dms greeter enable`; reverter com `dms greeter uninstall`)
 - **numlock** ativo no login (herdado do `config.kdl` do niri) e **auto-unlock do keyring** (`pam_gnome_keyring` no `/etc/pam.d/greetd`)
 - **auto-resync do wallpaper**: o path unit `dms-greeter-resync.path` (systemd user) observa o `session.json` do DMS e roda `dms greeter sync` quando você troca o wallpaper — o login acompanha o desktop sozinho
 
 ### Terminal (via `pacman`)
-- **WezTerm** — terminal GPU com **panes/splits nativos** (`Ctrl+\` horizontal, `Ctrl+-` vertical), navegação `Ctrl+Shift+hjkl`/setas, zoom `Ctrl+Shift+Z` e **equalize** `Ctrl+Shift+E` (distribui os panes da aba, via `equalize.js`/node). Tema **Catppuccin Mocha** como fallback, sobrescrito por cores **Material You dinâmicas** geradas pelo DMS (`colors/dank-theme.toml` via matugen) que acompanham o wallpaper (recolore ao vivo pelo watch do config). Abre no `Mod+T` do niri. `Shift+Enter` = nova linha (CSI u, p/ Claude Code/nvim)
-- **Ghostty** — terminal alternativo com a **mesma fonte e o mesmo tema** do WezTerm: JetBrainsMono Nerd Font 11.5, célula 10% mais alta (`adjust-cell-height`, equivale ao `line_height = 1.1`), opacidade 0.92 e Catppuccin Mocha como fallback, sobrescrito pelas cores Material You do DMS (`~/.config/ghostty/themes/dankcolors` via matugen, incluído com `config-file = ?themes/dankcolors`). **Panes com os mesmos atalhos do WezTerm** (`Ctrl+\`/`Ctrl+-` split, `Ctrl+Shift+hjkl`/setas navega, `Ctrl+Shift+Z` zoom, `Ctrl+Shift+E` equaliza — aqui é ação nativa, sem o `equalize.js`); as abas ficam com os defaults do Ghostty. Abre no `Mod+Enter` do niri
+- **Ghostty** — terminal GPU: JetBrainsMono Nerd Font 11.5, célula 10% mais alta (`adjust-cell-height`, equivale a um line-height 1.1), opacidade 0.92 e **Catppuccin Mocha** como fallback, sobrescrito pelas cores **Material You** do DMS (`~/.config/ghostty/themes/dankcolors` via matugen, incluído com `config-file = ?themes/dankcolors`) que acompanham o wallpaper. **Teclado 100% nos defaults** (nenhum `keybind` no config) — os panes do dia a dia são do **herdr**, que roda dentro do terminal; assim nada compete. Abre no `Mod+Enter` do niri
 - **JetBrainsMono Nerd Font** — fonte com ícones/ligaduras
-- **nodejs** — roda o `equalize.js` (distribuição igual dos panes)
 
 ### Shell (via `pacman` + script)
 - **zsh** + **Oh My Zsh** — shell padrão; `.zshrc` versionado (tema `robbyrussell`, plugins `git`/`fzf`/`sudo`). Configurável por **fzf** no setup (`3-configure-zsh.sh`) — escolhe tema + plugins — ou editando o `.zshrc` direto
@@ -139,6 +138,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **Codex CLI** (`openai-codex`) + **codex-fugu** — funções `codex` / `codex-fugu` (`dev/codex/codex.zsh`) sempre em **YOLO** (sem sandbox/confirmação) e via Headroom. O `codex-fugu` depende do bootstrap manual de [SakanaAI/fugu](https://github.com/SakanaAI/fugu) em `~/.fugu`
 - **Antigravity CLI** (AUR, `antigravity-cli`) — função `agy` (`dev/antigravity/agy.zsh`) em modo YOLO
 - **Posting** (AUR, `posting`) — cliente de API HTTP no terminal (TUI); coleções em `~/.local/share/posting/`, config via `posting locate config`
+- **herdr** (AUR, `herdr-bin`) — **multiplexador de terminal para agentes de código**: cada agente num PTY próprio, num servidor que sobrevive ao fechar o terminal (reattach com `herdr`), com a sidebar mostrando o estado de cada um (`working`/`blocked`/`done`/`idle`). Prefix `ctrl+b` (estilo tmux), mouse-first. Atalhos nos **defaults** — o Ghostty também ficou no teclado default pra não competir. Config opcional em `~/.config/herdr/config.toml` (`herdr --default-config` imprime a base)
 
 ### Storage
 - **ntfs-3g** (tools) + driver **`ntfs3`** (kernel) — monta unidades Windows (NTFS) com `nofail`/automount; atalho `~/<rótulo>`
@@ -159,15 +159,14 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 
 | Atalho | Ação |
 |--------|------|
-| `Mod+T` | abre o WezTerm |
 | `Mod+Enter` | abre o Ghostty |
 | `Mod+↑` / `Mod+↓` | navega foco (janela na coluna → transborda p/ workspace) |
 | `Mod+Shift+↑/↓` · `Mod+Ctrl+↑/↓` | move a janela entre workspaces |
 | `Mod+J` / `Mod+K` | foco de janela na coluna |
 
-**WezTerm:** `Shift+Enter` = nova linha (CSI u, p/ Claude Code/nvim). Panes: `Ctrl+\`/`Ctrl+-` split, `Ctrl+Shift+hjkl` navega, `Ctrl+Shift+E` equaliza.
+**Ghostty (defaults, nada remapeado — `ghostty +list-keybinds` lista todos):** `Ctrl+Shift+O` split à direita, `Ctrl+Shift+E` split abaixo, `Ctrl+Alt+setas` navega, `Ctrl+Shift+Enter` zoom, `Super+Ctrl+Shift+setas` redimensiona. Abas: `Ctrl+Shift+T` nova, `Ctrl+Tab`/`Ctrl+Shift+Tab` alterna, `Ctrl+Shift+W` fecha. `Ctrl+Shift+,` recarrega a config.
 
-**Ghostty:** mesmos atalhos de panes do WezTerm (`Ctrl+\`/`Ctrl+-`, `Ctrl+Shift+hjkl`, `Ctrl+Shift+Z`, `Ctrl+Shift+E`). `Ctrl+Shift+,` recarrega a config. Abas nos defaults: `Ctrl+Shift+T` nova, `Ctrl+Tab`/`Ctrl+Shift+Tab` alterna, `Ctrl+W` fecha.
+**herdr (prefix `Ctrl+B`, estilo tmux — `Ctrl+B ?` mostra tudo):** `Ctrl+B V` split à direita, `Ctrl+B -` split abaixo, `Ctrl+B C` nova aba, `Ctrl+B N`/`P` próxima/anterior, `Ctrl+B 1..9` vai pra aba N, `Ctrl+B W` navega workspaces, `Ctrl+B Shift+N` novo workspace, `Ctrl+B Shift+1..9` vai pro workspace N, `Ctrl+B Alt+1..9` foca um agente, `Ctrl+B [` copy mode, `Ctrl+B Q` desanexa (agentes seguem rodando; `herdr` reanexa). Setas ←/→ navegam entre panes sem prefix. Mouse funciona pra tudo: clique foca, arrastar borda redimensiona, botão direito abre menu de split/aba, seleção já copia.
 
 > A barra sobe automaticamente no login via **`dms.service`** (serviço systemd de usuário, habilitado pelo `2-dms.sh`) — por isso o `spawn-at-startup` do DMS fica comentado no `config.kdl` (evita duplicar o shell). Settings do DMS: ícone de engrenagem na barra, ou `dms ipc call settings toggle`.
 
@@ -191,9 +190,8 @@ dotfiles-cachyos/
 │   │   └── greeter-resync.sh     # → ~/.config/DankMaterialShell/ (auto-resync)
 │   └── systemd/                  # → ~/.config/systemd/user/ (path+service do resync)
 ├── terminal/                     # categoria Terminal
-│   ├── install/                  # 1-wezterm 2-symlinks
-│   ├── wezterm/                  # wezterm.lua + equalize.js → ~/.config/wezterm/
-│   └── ghostty/                  # config (fonte/tema do WezTerm) → ~/.config/ghostty/
+│   ├── install/                  # 1-ghostty 2-symlinks
+│   └── ghostty/                  # config (fonte, tema, panes) → ~/.config/ghostty/
 ├── boot/                         # categoria Boot
 │   ├── install/                  # 1-limine-theme 2-plymouth
 │   └── limine/catppuccin-mocha.conf
@@ -204,7 +202,7 @@ dotfiles-cachyos/
 │   ├── install/                  # 1-zsh 2-symlinks 3-configure-zsh
 │   └── zsh/.zshrc                # → ~/.zshrc
 ├── dev/                          # categoria Dev
-│   ├── install/                  # 1-jetbrains-toolbox..4-runtimes 5-claude-code 7-headroom 8-claude-hud 9-beekeeper-studio 10-headroom-wrappers 11-posting
+│   ├── install/                  # 1-jetbrains-toolbox..4-runtimes 5-claude-code 7-headroom 8-claude-hud 9-beekeeper-studio 10-headroom-wrappers 11-posting 12-herdr
 │   ├── claude/                   # CLAUDE.md global + claude.zsh (função `c`) → linkados no .zshrc
 │   ├── codex/                    # codex.zsh (funções `codex`, `codex-fugu` em YOLO) → ~/.config/codex/
 │   └── antigravity/              # agy.zsh (função `agy` em YOLO) → ~/.config/antigravity/
