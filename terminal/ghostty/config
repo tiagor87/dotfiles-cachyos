@@ -19,6 +19,10 @@ theme = Catppuccin Mocha
 #    o "?" faz o Ghostty ignorar o include enquanto ele não existir.
 config-file = ?themes/dankcolors
 
+# ─── Janela ──────────────────────────────────────────────────────────────────
+# Sem titlebar/borda do GTK: o niri já é tiling e desenha as próprias bordas.
+window-decoration = none
+
 # Janela levemente transparente (deixa o wallpaper aparecer por baixo).
 background-opacity = 0.92
 
