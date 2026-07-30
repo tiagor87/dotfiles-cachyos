@@ -50,7 +50,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Categoria | # | Script | Responsabilidade |
 |-----------|---|--------|------------------|
 | Base | 1 | `base/install/1-yay.sh` | Instala o **yay** (helper de AUR, do repo CachyOS) + **base-devel/git** — pré-requisito para as etapas que instalam pacotes do AUR |
-| Desktop | 0 | `desktop/install/0-monitors.sh` | Configura os **monitores**: resolução + **refresh máximos** (gera `~/.config/niri/outputs.kdl`, incluído pelo `config.kdl`); pergunta rotação/reposição; portrait → coluna 100%. Roda dentro da sessão niri |
+| Desktop | 0 | `desktop/install/0-monitors.sh` | Configura os **monitores**: resolução + **refresh máximos** e **escala sempre 1** (sem fracionária: 1 px lógico = 1 px físico) — gera `~/.config/niri/outputs.kdl`, incluído pelo `config.kdl`; pergunta rotação/reposição; portrait → coluna 100%. Roda dentro da sessão niri |
 | Desktop | 1 | `desktop/install/1-niri.sh` | Instala o **niri** + utilitários da sessão (fuzzel, swaybg, playerctl, brightnessctl, xwayland-satellite, portais XDG) — o lock é o do DMS, não o swaylock (ver 9-lock.sh) |
 | Desktop | 2 | `desktop/install/2-dms.sh` | Instala o **DankMaterialShell** (`dms-shell`) + deps (matugen, wl-clipboard, cliphist, cava, qt6-multimedia, inter-font, ícones Material Symbols do AUR) e habilita o `dms.service` (autostart) |
 | Desktop | 3 | `desktop/install/3-greeter.sh` | Login via **greeter do DMS** (greetd): instala `greetd` + `greetd-dms-greeter-git` (pacman/yay), habilita com `dms greeter enable` (substitui o SDDM) + `sync` (wallpaper dinâmico); adiciona `pam_gnome_keyring` ao `/etc/pam.d/greetd` (auto-unlock) e confirma numlock. ⚠️ crítico de login |
