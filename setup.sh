@@ -28,7 +28,7 @@ fi
 CATEGORIES=(
     "Base|Helper de AUR (yay) + base-devel/git — pré-requisito p/ pacotes do AUR|base/install"
     "Desktop|niri (WM) + DankMaterialShell + greeter do DMS (greetd)|desktop/install"
-    "Terminal|WezTerm (panes nativos + cores Material You)|terminal/install"
+    "Terminal|Ghostty (panes nativos + cores Material You)|terminal/install"
     "Boot|Plymouth (splash) + tema do Limine — Catppuccin Mocha|boot/install"
     "Security|gnome-keyring (Secret Service + agente SSH, auto-unlock)|security/install"
     "Shell|zsh + Oh My Zsh + fzf|shell/install"
