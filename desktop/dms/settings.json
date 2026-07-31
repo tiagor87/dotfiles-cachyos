@@ -3,7 +3,7 @@
   "currentThemeCategory": "dynamic",
   "customThemeFile": "",
   "registryThemeVariants": {},
-  "matugenScheme": "scheme-tonal-spot",
+  "matugenScheme": "scheme-rainbow",
   "matugenContrast": 0,
   "runUserMatugenTemplates": true,
   "matugenTargetMonitor": "",
@@ -421,7 +421,7 @@
   "matugenTemplateFoot": true,
   "matugenTemplateAlacritty": false,
   "matugenTemplateNeovim": false,
-  "matugenTemplateWezterm": false,
+  "matugenTemplateWezterm": true,
   "matugenTemplateDgop": true,
   "matugenTemplateKcolorscheme": true,
   "matugenTemplateVscode": true,
@@ -649,7 +649,8 @@
       "shadowOpacity": 60,
       "shadowColorMode": "text",
       "shadowCustomColor": "#000000",
-      "clickThrough": false
+      "clickThrough": false,
+      "hoverPopouts": true
     }
   ],
   "desktopClockEnabled": false,
