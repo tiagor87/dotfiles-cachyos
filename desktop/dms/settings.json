@@ -421,7 +421,7 @@
   "matugenTemplateFoot": true,
   "matugenTemplateAlacritty": false,
   "matugenTemplateNeovim": false,
-  "matugenTemplateWezterm": true,
+  "matugenTemplateWezterm": false,
   "matugenTemplateDgop": true,
   "matugenTemplateKcolorscheme": true,
   "matugenTemplateVscode": true,
