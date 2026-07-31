@@ -16,6 +16,11 @@ if [[ ! -t 0 || ! -t 1 ]] || ! command -v fzf >/dev/null 2>&1; then
 fi
 
 # --- Tema --------------------------------------------------------------------
+# Com o starship instalado, ele escreve o PROMPT depois do OMZ (ver
+# 5-starship.sh): o ZSH_THEME escolhido aqui só vale como fallback.
+command -v starship >/dev/null 2>&1 && \
+    c_warn "starship instalado: o prompt é dele — o ZSH_THEME abaixo fica só de fallback."
+
 cur_theme=$(grep -oP '^ZSH_THEME="\K[^"]*' "$ZSHRC" 2>/dev/null || echo robbyrussell)
 if [[ -d $HOME/.oh-my-zsh/themes ]]; then
     mapfile -t themes < <(find "$HOME/.oh-my-zsh/themes" -name '*.zsh-theme' -printf '%f\n' | sed 's/\.zsh-theme$//' | sort)

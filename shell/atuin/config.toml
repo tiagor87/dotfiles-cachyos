@@ -1,0 +1,25 @@
+# config.toml — atuin (linkado p/ ~/.config/atuin/config.toml pelo 4-atuin.sh)
+#
+# Só o que difere dos defaults. O template completo (todas as chaves, comentadas
+# e documentadas) sai em:  atuin default-config
+#
+# NÃO versionado, de propósito: o histórico (~/.local/share/atuin/history.db) e a
+# CHAVE de criptografia do sync (~/.local/share/atuin/key, veja `atuin key`) —
+# a chave é segredo e sem ela o histórico sincronizado não volta em outra máquina.
+
+# Enter executa direto o comando escolhido na busca; Tab só coloca na linha de
+# comando pra editar antes de rodar.
+enter_accept = true
+
+# Busca fuzzy resolvida pelo daemon (em vez de abrir o SQLite a cada tecla).
+search_mode = "daemon-fuzzy"
+
+[daemon]
+# Gravação/sync passam pelo daemon: o prompt não paga o custo em cada comando.
+enabled = true
+# Sem unit systemd — o `atuin init zsh` sobe o daemon quando precisa.
+autostart = true
+
+[ai]
+# Busca do histórico em linguagem natural (requer conta no Atuin Hub).
+enabled = true

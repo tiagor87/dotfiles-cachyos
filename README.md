@@ -71,6 +71,9 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Shell | 1 | `shell/install/1-zsh.sh` | Instala **zsh** + **fzf** + **zoxide** + plugins (autosuggestions, syntax-highlighting), **Oh My Zsh** (unattended) e define o zsh como shell padrão (`chsh`) |
 | Shell | 2 | `shell/install/2-symlinks.sh` | Linka o `.zshrc` → `~/.zshrc` |
 | Shell | 3 | `shell/install/3-configure-zsh.sh` | **Config interativa** (via fzf): escolhe `ZSH_THEME` e os `plugins` e grava no `.zshrc` versionado. Pula sem TTY/fzf |
+| Shell | 4 | `shell/install/4-atuin.sh` | Instala o **atuin** (histórico em SQLite: `Ctrl+R` fuzzy + sync criptografado) do **repo**, não pelo `curl \| sh` do quickstart — e oferece remover a instalação solta em `~/.atuin`, que sombrearia o pacote. Linka o `config.toml` e **importa o histórico do zsh** só se o banco estiver vazio (`atuin import` não deduplica). Sync/conta ficam a cargo do usuário (`atuin register`/`login`) |
+| Shell | 5 | `shell/install/5-starship.sh` | Instala o **starship** (prompt) do **repo oficial**, não pelo `curl \| sh`. O init entra **depois** do `oh-my-zsh.sh` no `.zshrc`, então quem escreve o `PROMPT` é o starship e o `ZSH_THEME` fica só de **fallback**. **Sem config versionado**: valem os defaults (`starship preset --list` troca o visual) |
+| Shell | 6 | `shell/install/6-iris.sh` | Instala o **IRIS** (menu de autocomplete no TTY, estilo IntelliSense) via **AUR `iris-autocomplete-bin`** — atenção ao nome, o AUR tem vários "iris" de projetos diferentes. Não é hook: **envolve** o shell, então a integração é só o `alias i='iris'`. Cria o `config.toml` com `iris config init` (não versionado — o próprio IRIS reescreve o arquivo) e **corrige os dois defaults** que brigam com o setup: `toggle-mode` sai do `Ctrl+R` (que é do atuin) pro `Ctrl+G`, e `updater.check-on-startup` vira `false` (o binário é do pacman). Só ajusta o que ainda está no default — valor customizado fica intacto |
 | Dev | 1 | `dev/install/1-jetbrains-toolbox.sh` | Instala o **JetBrains Toolbox** (AUR) — gerencia Rider, IntelliJ, etc. |
 | Dev | 2 | `dev/install/2-docker-desktop.sh` | Instala o **Docker Desktop** (AUR), **corrige o login** (gera chave GPG + `pass init` — o credential helper do Docker no Linux usa `pass`; sem isso o Sign in não persiste) e **limita os recursos da VM** (`Cpus=4`, `MemoryMiB=4096`, `DiskSizeMiB=131072`): sem isso a VM QEMU sobe com `-smp <todos os cores>` e disputa CPU com o desktop |
 | Dev | 3 | `dev/install/3-cli-tools.sh` | Instala **bun** + **AWS CLI v2** + **Terraform** + **GitHub CLI** (repo oficial) e a **Antigravity CLI** (AUR) |
@@ -116,10 +119,13 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 - **Ghostty** — terminal GPU: JetBrainsMono Nerd Font 11.5, célula 10% mais alta (`adjust-cell-height`, equivale a um line-height 1.1), opacidade 0.92 e **Catppuccin Mocha** como fallback, sobrescrito pelas cores **Material You** do DMS (`~/.config/ghostty/themes/dankcolors` via matugen, incluído com `config-file = ?themes/dankcolors`) que acompanham o wallpaper. **Teclado 100% nos defaults** (nenhum `keybind` no config) — os panes do dia a dia são do **herdr**, que roda dentro do terminal; assim nada compete. Abre no `Mod+Enter` do niri
 - **JetBrainsMono Nerd Font** — fonte com ícones/ligaduras
 
-### Shell (via `pacman` + script)
-- **zsh** + **Oh My Zsh** — shell padrão; `.zshrc` versionado (tema `robbyrussell`, plugins `git`/`fzf`/`sudo`). Configurável por **fzf** no setup (`3-configure-zsh.sh`) — escolhe tema + plugins — ou editando o `.zshrc` direto
+### Shell (via `pacman` + AUR + script)
+- **zsh** + **Oh My Zsh** — shell padrão; `.zshrc` versionado (tema `robbyrussell` como fallback do starship, plugins `git`/`fzf`/`sudo`). Configurável por **fzf** no setup (`3-configure-zsh.sh`) — escolhe tema + plugins — ou editando o `.zshrc` direto
 - **fzf** — fuzzy finder (`Ctrl+R` histórico, `Ctrl+T` arquivos, `Alt+C` cd) via plugin do OMZ
 - **zsh-autosuggestions** + **zsh-syntax-highlighting** (pacman) — sugestões e realce na linha de comando
+- **starship** — prompt: carregado **depois** do `oh-my-zsh.sh`, é ele que escreve o `PROMPT` (o `ZSH_THEME` só entra em máquina sem starship). Roda nos **defaults**, sem `starship.toml` versionado — `starship preset --list` mostra os visuais prontos
+- **IRIS** (AUR, `iris-autocomplete-bin`) — menu de autocomplete dentro do TTY (estilo IntelliSense; sobrevive a tmux/SSH/TUI, sem GUI). **Envolve** o shell em vez de virar hook: roda sob demanda com `i`/`iris`, então não interfere no prompt nem nos keybindings do zsh de fora. Config em `~/.config/iris/config.toml` (do `iris config init`, não versionado — o IRIS reescreve o arquivo). Dentro dele o `Ctrl+R` é do IRIS, não do atuin, até remapear `toggle-mode`
+- **atuin** — histórico de shell em SQLite: assume o **`Ctrl+R`** e o **`↑`** com busca fuzzy pelo daemon (carregado **depois** do fzf no `.zshrc`, senão o fzf ficaria com o `Ctrl+R`; `Ctrl+T`/`Alt+C` seguem no fzf). Config em `shell/atuin/config.toml`; o banco (`~/.local/share/atuin/history.db`) e a **chave do sync** (`atuin key`) não são versionados
 
 ### Dev (via `pacman` + AUR)
 - **JetBrains Toolbox** (AUR) — gerencia Rider, IntelliJ, etc.
@@ -199,8 +205,9 @@ dotfiles-cachyos/
 │   ├── install/                  # 1-gnome-keyring 2-symlinks 3-cloudflare-warp
 │   └── environment.d/10-ssh-agent.conf  # → ~/.config/environment.d/
 ├── shell/                        # categoria Shell
-│   ├── install/                  # 1-zsh 2-symlinks 3-configure-zsh
-│   └── zsh/.zshrc                # → ~/.zshrc
+│   ├── install/                  # 1-zsh 2-symlinks 3-configure-zsh 4-atuin 5-starship 6-iris
+│   ├── zsh/.zshrc                # → ~/.zshrc
+│   └── atuin/config.toml         # → ~/.config/atuin/config.toml
 ├── dev/                          # categoria Dev
 │   ├── install/                  # 1-jetbrains-toolbox..4-runtimes 5-claude-code 7-headroom 8-claude-hud 9-beekeeper-studio 10-headroom-wrappers 11-posting 12-herdr
 │   ├── claude/                   # CLAUDE.md global + claude.zsh (função `c`) → linkados no .zshrc

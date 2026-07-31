@@ -31,7 +31,7 @@ CATEGORIES=(
     "Terminal|Ghostty (panes nativos + cores Material You)|terminal/install"
     "Boot|Plymouth (splash) + tema do Limine — Catppuccin Mocha|boot/install"
     "Security|gnome-keyring (Secret Service + agente SSH, auto-unlock)|security/install"
-    "Shell|zsh + Oh My Zsh + fzf|shell/install"
+    "Shell|zsh + Oh My Zsh + fzf + atuin + starship + IRIS (autocomplete)|shell/install"
     "Dev|JetBrains Toolbox|dev/install"
     "Storage|Monta unidades Windows (NTFS/ntfs3) com nofail + RTC em horário local (dual boot)|storage/install"
 )
