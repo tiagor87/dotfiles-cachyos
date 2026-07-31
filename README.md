@@ -61,6 +61,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Desktop | 8 | `desktop/install/8-keyboard.sh` | **Layout de teclado** via `localectl set-x11-keymap` (niri lê do `org.freedesktop.locale1`): escolhe entre BR ABNT2 (`br`/`abnt2`) e US International (`us`/`pc105`/`intl`, dead keys) — os dois são do dataset padrão do xkb, sem variante custom. Interativo; pula sem TTY. **Acentuação em apps GTK4 nativos** (Ghostty) depende do `GTK_IM_MODULE "gtk-im-context-simple"` no bloco `environment` do `config.kdl` — sem IME, o GTK não compõe dead keys sozinho no Wayland |
 | Desktop | 9 | `desktop/install/9-lock.sh` | **Lock da máquina via DMS** (substitui o swaylock): o `Super+Alt+L` chama `dms ipc call lock lock` (mesma UI do greeter) e `lockBeforeSuspend` fica ligado; valida o wiring e **remove o swaylock** (com confirmação, guarda de dependência). Idempotente |
 | Desktop | 10 | `desktop/install/10-fingerprint.sh` | **Sensor de digital** (fprintd), se houver leitor: detecta via D-Bus, **cadastra uma digital** (interativo), liga a digital no lock e no greeter do DMS (`enableFprint`/`greeterEnableFprint`) e, opcional, no **sudo** (`pam_fprintd`, senha como fallback). Sem leitor, sai sem alterar nada |
+| Desktop | 11 | `desktop/install/11-face-unlock.sh` | **Reconhecimento facial por infravermelho** (`howdy-next`), se houver câmera IR: detecta o nó v4l2 pelo sysfs, baixa os modelos, aponta o `device_path` para o nó IR, **mede se o emissor IR acende** (captura 15 quadros — sem emissor o Howdy só vê preto), ajusta o `max_height` para a resolução nativa do sensor, **cadastra vários modelos em ciclo** (um por condição — sem óculos, de óculos, luz diferente; o Howdy compara contra todos, então é ganho sem afrouxar limiar) testando cada um na hora, e **valida com `howdy test`**. **Por default para aí — não toca em nenhum stack de PAM.** A integração é opt-in e exige o `howdy test` verde: `DOTFILES_FACE_PAM=1` (sudo + `/etc/pam.d/dankshell-face` p/ o lock) e `DOTFILES_FACE_GREETER=1` (greetd/login). Cada arquivo tocado ganha `.bak-dotfiles-face`. No lock o rosto **não é hands-free**: o DMS só inicia o PAM no Enter. Sem câmera IR, sai sem alterar nada |
 | Terminal | 1 | `terminal/install/1-ghostty.sh` | Instala o **Ghostty** + **JetBrainsMono Nerd Font** |
 | Terminal | 2 | `terminal/install/2-symlinks.sh` | Linka `config` → `~/.config/ghostty/`, cria a pasta de cores do DMS (`ghostty/themes/`) e valida a config |
 | Boot | 1 | `boot/install/1-limine-theme.sh` | Garante a paleta **Catppuccin Mocha** no `/boot/limine.conf` (idempotente, backup + checagem de sanidade das entradas; preserva o wallpaper/splash) |
@@ -94,7 +95,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 ### Compositor & sessão (via `pacman`)
 - **niri** — compositor Wayland scrollable-tiling
 - **fuzzel** — launcher legado (`Mod+D`)
-- **lock da máquina** — o **próprio lock do DMS** (`Super+Alt+L` → `dms ipc call lock lock`), mesma UI do greeter; sem swaylock (`fprintd` habilita a digital no lock/greeter)
+- **lock da máquina** — o **próprio lock do DMS** (`Super+Alt+L` → `dms ipc call lock lock`), mesma UI do greeter; sem swaylock (`fprintd` dá a digital contínua no lock/greeter, por D-Bus; `howdy-next` dá o rosto por IR via `lockPamPath`, mas só depois do Enter — o DMS não inicia o PAM antes disso)
 - **swaybg** — wallpaper
 - **playerctl** / **brightnessctl** — teclas de mídia e OSD de brilho
 - **xwayland-satellite** — suporte a apps X11
@@ -188,7 +189,8 @@ dotfiles-cachyos/
 ├── base/                         # categoria Base
 │   └── install/                  # 1-yay (helper de AUR + base-devel/git)
 ├── desktop/                      # categoria Desktop
-│   ├── install/                  # 0-monitors 1-niri 2-dms 3-greeter 4-symlinks 5-wallpapers 6-profile-picture 7-browser 8-keyboard 9-lock 10-fingerprint
+│   ├── install/                  # 0-monitors 1-niri 2-dms 3-greeter 4-symlinks 5-wallpapers 6-profile-picture 7-browser 8-keyboard 9-lock 10-fingerprint 11-face-unlock
+│   ├── pam/dankshell-face        # → /etc/pam.d/dankshell-face (stack de rosto do lock)
 │   ├── niri/config.kdl           # → ~/.config/niri/config.kdl
 │   ├── dms/
 │   │   ├── settings.json         # → ~/.config/DankMaterialShell/settings.json
