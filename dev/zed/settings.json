@@ -1,0 +1,12 @@
+{
+  "theme": {
+    "mode": "dark",
+    "dark": "DankShell Dark",
+    "light": "DankShell Light"
+  },
+  "buffer_font_family": "JetBrainsMono Nerd Font",
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false
+  }
+}
