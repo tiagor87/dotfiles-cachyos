@@ -9,7 +9,7 @@
 #   • o carregamento de tools sob demanda (headroom#746  → o wrap mantém ligado)
 #   • o /remote-control (/rc)             (sem contorno possível)
 # O wrap sobe/reaproveita o proxy, registra os MCPs (headroom_retrieve +
-# tokensave) e instala o hook do rtk sozinho.
+# tokensave) e — SÓ com --rtk — instala o hook do rtk sozinho.
 #
 # CLAUDE_MODEL: o --1m grava ANTHROPIC_MODEL=<opus>[1m], e o <opus> default do
 # headroom é uma geração atrás — sem fixar aqui, `c` cai calado num modelo
@@ -18,6 +18,19 @@
 #
 # Flags opt-in do headroom (nenhuma é default — todas são `is_flag` do Click,
 # que resolve pra False):
+#   --rtk         NÃO é opcional aqui, e a ausência dela era um bug real: "RTK is
+#                 opt-in (off by default): turn it on with --rtk (which sets
+#                 HEADROOM_RTK=1)" (headroom/cli/wrap.py). Sem a flag, o gate
+#                 _rtk_opt_in() barra o setup inteiro — não baixa o binário, não
+#                 symlinka em ~/.local/bin, não registra o hook PreToolUse em
+#                 ~/.claude/settings.json e não cria o ~/.claude/RTK.md.
+#                 O efeito era pior que "faltar uma feature": o CLAUDE.md
+#                 VERSIONADO (dev/claude/CLAUDE.md) documenta o hook como ativo
+#                 e termina com `@RTK.md` — sem --rtk ele descrevia
+#                 comportamento inexistente e importava um arquivo que nunca era
+#                 criado.
+#                 `--context-tool` é o nome LEGADO do mesmo gate e `--no-rtk`
+#                 virou alias de `--no-context-tool`; use --rtk, que é o atual.
 #   --code-graph  indexa o cwd e fica com um watcher reindexando ao vivo. O
 #                 índice sob demanda do tokensave já roda sem esta flag (o wrap
 #                 chama `tokensave init/sync` no registro do MCP); ela só
@@ -56,6 +69,6 @@ c() {
     # `headroom wrap claude --help`). Cold start do proxy carrega modelos de ML
     # e pode levar dezenas de segundos na primeira invocação.
     ANTHROPIC_MODEL="$CLAUDE_MODEL" \
-        headroom wrap claude --1m --code-graph --memory --learn \
+        headroom wrap claude --rtk --1m --code-graph --memory --learn \
         -- --dangerously-skip-permissions "$@"
 }
