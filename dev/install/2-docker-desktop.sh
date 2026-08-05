@@ -174,3 +174,35 @@ else
     c_info "Docker Desktop parado — o próximo start já sobe com os limites."
 fi
 c_info "Conferir depois do restart:  pgrep -af qemu-system | grep -o '\\-smp [0-9]*\\|\\-m [0-9]*'"
+
+# ---------------------------------------------------------------------------
+# 4) Socket padrão (/var/run/docker.sock)
+# ---------------------------------------------------------------------------
+# No Linux o Docker Desktop só escuta em ~/.docker/desktop/docker.sock e aponta o
+# CLI pra lá trocando o contexto pra `desktop-linux`. Quem NÃO lê o contexto do
+# docker — Dev Containers, Testcontainers, IDEs, qualquer coisa que monte
+# /var/run/docker.sock — quebra com "Cannot connect to the Docker daemon at
+# unix:///var/run/docker.sock". A opção "Allow the default Docker socket" da UI
+# não existe no Linux (o pacote não traz helper privilegiado), então o link é
+# nosso: via tmpfiles.d, porque /run é tmpfs e o systemd recria no boot.
+DD_SOCK="${DD_SOCK:-$HOME/.docker/desktop/docker.sock}"
+DD_TMPFILES="${DD_TMPFILES:-/etc/tmpfiles.d/docker-desktop-socket.conf}"
+dd_tmpfiles_content="# Gerado por dotfiles: dev/install/2-docker-desktop.sh
+# Expõe o socket do Docker Desktop no caminho padrão, pra quem ignora o contexto.
+L+ /run/docker.sock - - - - $DD_SOCK"
+
+if systemctl is-enabled docker.service docker.socket 2>/dev/null | grep -qx enabled; then
+    # O Docker Engine (CE) é o dono legítimo de /run/docker.sock — não competimos.
+    pkg_status "Docker socket padrão" "= pulado (docker.service/socket enabled)" "$C_YELLOW"
+    log_entry dev "Docker socket padrão" skipped "docker CE enabled"
+elif [[ $(cat "$DD_TMPFILES" 2>/dev/null) == "$dd_tmpfiles_content" ]]; then
+    pkg_status "Docker socket padrão" "= já configurado" "$C_DIM"
+    log_entry dev "Docker socket padrão" skipped "$DD_TMPFILES"
+elif printf '%s\n' "$dd_tmpfiles_content" | sudo tee "$DD_TMPFILES" >/dev/null \
+    && sudo systemd-tmpfiles --create "$DD_TMPFILES"; then
+    pkg_status "Docker socket padrão" "✓ /run/docker.sock → $DD_SOCK" "$C_GREEN"
+    log_entry dev "Docker socket padrão" configured "$DD_TMPFILES"
+else
+    pkg_status "Docker socket padrão" "✗ falhou" "$C_RED"
+    log_entry dev "Docker socket padrão" failed "$DD_TMPFILES"
+fi
