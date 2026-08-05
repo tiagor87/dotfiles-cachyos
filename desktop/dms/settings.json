@@ -64,7 +64,7 @@
   "blurBorderColor": "outline",
   "blurBorderCustomColor": "#ffffff",
   "blurBorderOpacity": 0.35,
-  "wallpaperFillMode": "Fill",
+  "wallpaperFillMode": "Fit",
   "blurredWallpaperLayer": false,
   "blurWallpaperOnOverview": false,
   "wallpaperBackgroundColorMode": "black",
@@ -388,15 +388,6 @@
   "fadeToDpmsEnabled": true,
   "fadeToDpmsGracePeriod": 5,
   "launchPrefix": "",
-  "brightnessDevicePins": {},
-  "wifiNetworkPins": {},
-  "bluetoothDevicePins": {
-    "preferredDevice": [
-      "CC:56:5C:84:DE:E7"
-    ]
-  },
-  "audioInputDevicePins": {},
-  "audioOutputDevicePins": {},
   "gtkThemingEnabled": false,
   "qtThemingEnabled": false,
   "syncModeWithPortal": true,
@@ -583,10 +574,7 @@
       "enabled": true,
       "position": 0,
       "screenPreferences": [
-        {
-          "name": "DP-1",
-          "model": "LG ULTRAGEAR+"
-        }
+        "all"
       ],
       "showOnLastDisplay": true,
       "leftWidgets": [
@@ -757,5 +745,5 @@
   "barInsetPaddingShared": -1,
   "barInsetPaddingSyncAll": false,
   "frameBarInsetPadding": -1,
-  "configVersion": 12
+  "configVersion": 13
 }
