@@ -69,6 +69,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Security | 1 | `security/install/1-gnome-keyring.sh` | Instala **gnome-keyring** + seahorse, habilita o `gcr-ssh-agent.socket` e integra o git (`credential.helper=libsecret`) |
 | Security | 2 | `security/install/2-symlinks.sh` | Linka `environment.d/10-ssh-agent.conf` (define `SSH_AUTH_SOCK` → gcr) |
 | Security | 3 | `security/install/3-cloudflare-warp.sh` | Instala **Cloudflare WARP** (`cloudflare-warp-bin` do AUR), habilita+inicia o `warp-svc.service` e **registra a conta** (gratuita/anônima). Não conecta sozinho — `warp-cli connect` fica a cargo do usuário. Idempotente |
+| Security | 4 | `security/install/4-bitwarden-cli.sh` | Instala o **Bitwarden CLI** (`bw`, repo oficial) — cofre de senhas no terminal. Só instala e reporta o estado do cofre; `bw login` e `bw unlock` (senha-mestra/2FA, sessão por shell via `BW_SESSION`) ficam a cargo do usuário. Idempotente |
 | Shell | 1 | `shell/install/1-zsh.sh` | Instala **zsh** + **fzf** + **zoxide** + plugins (autosuggestions, syntax-highlighting), **Oh My Zsh** (unattended) e define o zsh como shell padrão (`chsh`) |
 | Shell | 2 | `shell/install/2-symlinks.sh` | Linka o `.zshrc` → `~/.zshrc` |
 | Shell | 3 | `shell/install/3-configure-zsh.sh` | **Config interativa** (via fzf): escolhe `ZSH_THEME` e os `plugins` e grava no `.zshrc` versionado. Pula sem TTY/fzf |
@@ -207,7 +208,7 @@ dotfiles-cachyos/
 │   ├── install/                  # 1-limine-theme 2-plymouth
 │   └── limine/catppuccin-mocha.conf
 ├── security/                     # categoria Security
-│   ├── install/                  # 1-gnome-keyring 2-symlinks 3-cloudflare-warp
+│   ├── install/                  # 1-gnome-keyring 2-symlinks 3-cloudflare-warp 4-bitwarden-cli
 │   └── environment.d/10-ssh-agent.conf  # → ~/.config/environment.d/
 ├── shell/                        # categoria Shell
 │   ├── install/                  # 1-zsh 2-symlinks 3-configure-zsh 4-atuin 5-starship 6-iris
