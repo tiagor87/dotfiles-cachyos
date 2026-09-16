@@ -61,6 +61,36 @@ input {
         // middle-emulation
     }
 
+    // Mesa digitalizadora COM tela (Huion Kamvas 13 Gen3, 256c:2008). Sem
+    // map-to-output o niri espalha a área da caneta pelos dois monitores: você
+    // desenha no Kamvas e o cursor sai na tela do notebook. A caneta já vem em
+    // modo nativo pelo hid-multitouch (16384 níveis de pressão + tilt), então
+    // não falta driver — só o mapeamento.
+    // O nome é o do conector (mesma convenção do outputs.kdl); se trocar de
+    // porta, pegue o novo em `niri msg outputs`.
+    tablet {
+        map-to-output "HDMI-A-1"
+        // Y = 0.9 = 1080/1200: o niri normaliza o eixo Y da caneta contra a
+        // altura do eDP-1 (1200px), não contra a deste output (1080px). Sem
+        // isso o cursor fica certo no topo, erra cada vez mais pra baixo, e
+        // trava antes da borda inferior enquanto a caneta ainda tem curso.
+        // X = 1.0 porque os dois monitores têm 1920 de largura — sem
+        // discrepância, sem ganho pra corrigir.
+        // O valor bruto da caneta cobre 0..32767 inteiro, então nada disso é
+        // limitação de hardware.
+        // Se trocar de monitor, recalcule: altura_deste_output / altura_do_
+        // maior_output. Critério de acerto: no fim do curso da caneta o cursor
+        // tem que cair na última linha de pixels — travar antes significa ganho
+        // sobrando, faixa morta embaixo significa ganho de menos.
+        calibration-matrix 1.00000 0.0 0.0 0.0 0.90000 0.0
+    }
+
+    // O mesmo device expõe um nó de toque; mapeado junto pra não virar input
+    // fantasma espalhado pelos dois monitores.
+    touch {
+        map-to-output "HDMI-A-1"
+    }
+
     // Uncomment this to make the mouse warp to the center of newly focused windows.
     // warp-mouse-to-focus
 
