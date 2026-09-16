@@ -59,6 +59,11 @@ Invoke when the user's intent matches:
 - Be concise: state what changed and what's next; skip narration.
 - Reference code as `path:line` so the user can navigate directly.
 - When reporting task completion, name the success criterion that was met.
+- Sempre que o usuário precisar rodar um comando ele mesmo (login interativo, `sudo`, algo que abre browser), **copie o comando pro clipboard** com `printf '%s' '<cmd>' | wl-copy` (Wayland) antes de pedir, e avise que já está no clipboard. Comando puro, um por vez, sem o `!` na frente — pronto pra colar.
+
+## GitHub (issues e PRs)
+- Antes de criar issue ou PR, **procurar o template e preenchê-lo**. O padrão correto é o **default da org** (`<org>/.github`, ex. `bloquo-inc/.github`) — buscar com `gh api "repos/<org>/.github/git/trees/HEAD?recursive=1"` e ler via `gh api repos/<org>/.github/contents/<path> --jq .content | base64 -d`. Template no `.github/` do próprio repo é exceção/legado: mesmo que o GitHub o faça vencer mecanicamente, seguir o da org, salvo instrução em contrário.
+- Preencher **todas** as seções e checkboxes com verdade — checkbox marcado é afirmação de que o passo foi executado. Quando um item não se aplica ou falhou, dizer explicitamente em vez de marcar.
 
 ## Shell output (rtk)
 Um hook `PreToolUse` reescreve os comandos de Bash para passarem pelo `rtk`, que **filtra a saída** (`git diff` com menos contexto, `pytest`/`npm test` só com as falhas, `cat` com assinaturas em vez do corpo). Ver `@RTK.md` para os meta-comandos.
