@@ -236,6 +236,37 @@ fi
 # ---------------------------------------------------------------------------
 repo_install v4l-utils
 
+# 5a) Antes de medir o emissor: a câmera está bloqueada no hardware? O controle
+#     V4L2 `privacy` espelha o bloqueio do EC (a tecla de câmera do teclado —
+#     Fn+F10 nos ASUS) e é READ-ONLY: `--set-ctrl privacy=0` responde
+#     "Permission denied", não há como destravar por software.
+#     O sintoma é traiçoeiro (medido em 2026-08-04, ASUS FHD webcam / ASUS IR
+#     camera): bloqueada, a câmera ENTREGA os 15 quadros normalmente, só que
+#     preenchidos com um valor CONSTANTE — min=max=144. Média 144 passava
+#     folgado no corte de 8 do teste abaixo, então o script dizia "✓ emissor IR
+#     acende" para uma câmera cega, e a falha só reaparecia no `howdy test`, sem
+#     pista nenhuma. Sem imagem, threshold nenhum resolve.
+if command -v v4l2-ctl >/dev/null 2>&1; then
+    privacy=$(timeout 10 v4l2-ctl -d "$ir_dev" --get-ctrl privacy 2>/dev/null \
+        | awk -F': ' '/^privacy/{print $2}')
+    if [[ ${privacy:-0} == 1 ]]; then
+        pkg_status "câmera: bloqueio de hardware" "✗ privacy=1 (câmera desligada)" "$C_RED"
+        log_entry face privacy failed "V4L2 privacy=1 — câmera bloqueada pelo EC"
+        c_warn "A câmera está DESLIGADA no firmware. Assim ela ENTREGA quadros, mas chapados"
+        c_warn "(o sensor RGB devolve literalmente um ícone de câmera riscada), e o IR não acende."
+        c_warn "NÃO tem chave de software no Linux para reverter:"
+        c_warn "  - o controle 'privacy' do V4L2 é read-only (--set-ctrl responde Permission denied);"
+        c_warn "  - o 'Asus WMI hotkeys' só emite KEY_CAMERA (212), não KEY_CAMERA_ACCESS_TOGGLE:"
+        c_warn "    o F10 avisa que você apertou, quem desligaria de fato é o driver da ASUS."
+        c_warn "Ordem para religar: tecla F10 (ou Fn+F10) → item de câmera no BIOS (F2 no boot)"
+        c_warn "→ reabilitar no Windows, se houver dual boot (o EC guarda o estado entre boots)."
+        c_warn "Para conferir:  v4l2-ctl -d $ir_dev --get-ctrl privacy   # tem que dar 0"
+        c_warn "Paro aqui: sem imagem não há o que cadastrar, e nenhum PAM foi tocado."
+        return 0 2>/dev/null || exit 0
+    fi
+    pkg_status "câmera: bloqueio de hardware" "✓ privacy=${privacy:-ausente}" "$C_GREEN"
+fi
+
 if ! command -v v4l2-ctl >/dev/null 2>&1 || ! command -v python3 >/dev/null 2>&1; then
     pkg_status "emissor IR" "= sem v4l2-ctl/python3 (pulando o teste)" "$C_DIM"
     log_entry face ir-emitter skipped "faltou v4l2-ctl ou python3"
@@ -245,13 +276,26 @@ else
     if timeout 30 v4l2-ctl -d "$ir_dev" --set-fmt-video=pixelformat=GREY \
             --stream-mmap --stream-count=15 --stream-to="$frames" >/dev/null 2>&1 \
        && [[ -s $frames ]]; then
-        bright=$(python3 -c '
+        # Média E amplitude (max-min) do quadro mais claro. A média sozinha não
+        # distingue imagem de preenchimento: quadro chapado tem amplitude 0,
+        # imagem IR de verdade passa de 100.
+        read -r bright spread < <(python3 -c '
 import sys
 d = open(sys.argv[1], "rb").read()
 fs = len(d) // 15                       # 15 quadros GREY do mesmo tamanho
-print(int(max(sum(d[i*fs:(i+1)*fs]) / fs for i in range(15))) if fs else 0)
+if not fs:
+    print(0, 0)
+    raise SystemExit
+f = max((d[i*fs:(i+1)*fs] for i in range(15)), key=sum)
+print(int(sum(f) / fs), max(f) - min(f))
 ' "$frames")
-        if [[ $bright =~ ^[0-9]+$ ]] && (( bright >= 8 )); then
+        if [[ ! $spread =~ ^[0-9]+$ ]] || (( spread < 8 )); then
+            pkg_status "emissor IR" "✗ quadros chapados (amplitude ${spread:-?}, média ${bright:-?}/255)" "$C_RED"
+            log_entry face ir-emitter failed "quadros com valor constante — amplitude ${spread:-?}"
+            c_warn "A câmera devolve quadros de valor CONSTANTE: não é imagem, é preenchimento."
+            c_warn "Quase sempre é bloqueio de hardware (tecla de câmera / Fn+F10) — cheque:"
+            c_warn "  v4l2-ctl -d $ir_dev --get-ctrl privacy   # tem que dar 0"
+        elif [[ $bright =~ ^[0-9]+$ ]] && (( bright >= 8 )); then
             pkg_status "emissor IR" "✓ acende (quadro mais claro: média $bright/255)" "$C_GREEN"
             log_entry face ir-emitter configured "quadro mais claro: média $bright/255"
             # NÃO sugerir mexer no dark_threshold aqui. A chave não é "média
@@ -293,13 +337,22 @@ count_models() {
 # test_face <rótulo> → 0 se reconheceu. O timeout é rede de segurança: o
 # `timeout` do config.ini já limita o scan, mas se a câmera travar não queremos
 # pendurar o setup.
+FACE_LOG="${TMPDIR:-/tmp}/dotfiles-howdy-test.log"
 test_face() {
     local label="$1"
-    if timeout 30 sudo howdy -U "$USER" test >/dev/null 2>&1; then
+    if timeout 30 sudo howdy -U "$USER" test >"$FACE_LOG" 2>&1; then
         pkg_status "$label" "✓ reconheceu" "$C_GREEN"
         return 0
     fi
     pkg_status "$label" "✗ não reconheceu" "$C_RED"
+    # A saída do howdy é o ÚNICO diagnóstico útil aqui, e antes ia toda pro
+    # /dev/null: sobrava um "✗" sem nada pra investigar nem pra reportar.
+    # Qual etapa falhou muda o conserto — "no face detected" é detecção
+    # (yunet_score_threshold), "unknown face" é reconhecimento (outro modelo).
+    # Warnings do OpenCV 5 sobre 'setPreferableTarget'/'graph engine' são ruído:
+    # ele ignora o target e roda na CPU, o teste não falha por causa disso.
+    c_warn "Saída do 'howdy test' (íntegra em $FACE_LOG):"
+    tail -n 15 "$FACE_LOG" 2>/dev/null | sed 's/^/    /'
     return 1
 }
 
@@ -364,7 +417,21 @@ elif test_face "validação (howdy test)"; then
     face_ok=1
     log_entry face verify configured "howdy test ok com $models modelo(s)"
 else
-    log_entry face verify failed "howdy test falhou — PAM não será tocado"
+    # Uma falha pode ser só a posição/luz do momento. Retestar aqui é bem mais
+    # curto que reabrir o script, que refaria os passos 1-6 inteiros.
+    while [[ -t 0 && -t 1 ]]; do
+        printf 'Testar de novo? [s/N]: '
+        read -r ans
+        [[ $ans =~ ^[sSyY]$ ]] || break
+        test_face "validação (howdy test)" || continue
+        face_ok=1
+        log_entry face verify configured "howdy test ok com $models modelo(s) (após reteste)"
+        break
+    done
+fi
+
+if [[ ${models:-0} -gt 0 && $face_ok -ne 1 ]]; then
+    log_entry face verify failed "howdy test falhou — PAM não será tocado ($(tail -n1 "$FACE_LOG" 2>/dev/null))"
     c_warn "Sem reconhecimento comprovado eu NÃO mexo em PAM nenhum."
     c_warn "Para diagnosticar qual etapa falha, ligue os avisos e reteste:"
     c_warn "  sudo sed -i 's/^detection_notice.*/detection_notice = true/;" \
