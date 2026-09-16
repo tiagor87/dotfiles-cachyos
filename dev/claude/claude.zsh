@@ -68,7 +68,5 @@ c() {
     # `--` separa as flags do headroom das do claude (documentado em
     # `headroom wrap claude --help`). Cold start do proxy carrega modelos de ML
     # e pode levar dezenas de segundos na primeira invocação.
-    ANTHROPIC_MODEL="$CLAUDE_MODEL" \
-        headroom wrap claude --rtk --1m --code-graph --memory --learn \
-        -- --dangerously-skip-permissions "$@"
+    ai-memory run claude --yolo
 }
