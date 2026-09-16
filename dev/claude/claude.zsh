@@ -73,12 +73,22 @@ c() {
 # ANTHROPIC_CUSTOM_HEADERS, que aceita vários headers separados por \n — daí o
 # $'...' do zsh, que é a única forma de a quebra de linha chegar real.
 #
-# Credencial: vem do AWS CLI do ambiente (env, ~/.aws/credentials, SSO).
-# Pra escolher o perfil: `AWS_PROFILE=bloquo bc`.
+# Credencial: vem do AWS CLI do ambiente (env, ~/.aws/credentials, SSO). Sem
+# AWS_PROFILE setado, e como não existe perfil `default` neste `~/.aws/config`,
+# a cadeia de credenciais do SDK não acha nada em local nenhum e cai pro
+# fallback de rede (IMDS/ECS) — que numa máquina que não é EC2 FICA TRAVADO
+# por vários segundos antes de desistir. Isso já aconteceu e parecia "falha de
+# comunicação com a API": não era a API, era a resolução de credencial nunca
+# terminando. Por isso o default abaixo, e por isso o preflight com timeout —
+# falhar em ~8s com mensagem clara bate de longe ficar pendurado no meio do
+# `ai-memory run`.
+#
+# Pra trocar o perfil: `AWS_PROFILE=bloquo-internal bc` (ou qualquer outro do
+# `aws configure list-profiles`).
 #
 # Uso:
 #   bc [args...]              → Claude Code no Bedrock, na pasta atual
-#   AWS_PROFILE=... bc        → troca o perfil AWS
+#   AWS_PROFILE=... bc        → troca o perfil AWS (default: bloquo-bedrock)
 #   AWS_REGION=... bc         → troca a região (sobrepõe o BEDROCK_AWS_REGION)
 #   CLAUDE_BEDROCK_DIR=... bc → troca o diretório de config
 bc() {
@@ -90,6 +100,22 @@ bc() {
     if (( ${#faltando} )); then
         print -u2 "bc: faltam no ~/.zshenv: ${(j:, :)faltando}"
         print -u2 "bc: veja o cabeçalho de ~/.config/claude/claude.zsh para o formato."
+        return 1
+    fi
+
+    # `local`, não `export`: só vale pra esta invocação. Exportar mudaria o
+    # shell interativo pra sempre — todo `aws` digitado depois do `bc` herdaria
+    # o bloquo-bedrock sem avisar.
+    local AWS_PROFILE="${AWS_PROFILE:-bloquo-bedrock}"
+
+    # Preflight COM TIMEOUT: se a credencial não resolver (perfil errado, SSO
+    # expirado, sem rede), falha aqui em segundos — não dentro do claude, onde
+    # o sintoma vira um `bc` pendurado sem explicação nenhuma.
+    local erro
+    if ! erro=$(timeout 8 aws sts get-caller-identity --profile "$AWS_PROFILE" 2>&1 >/dev/null); then
+        print -u2 "bc: credencial AWS não resolveu pro perfil '$AWS_PROFILE' (timeout de 8s ou erro):"
+        print -u2 "bc:   $erro"
+        print -u2 "bc: rode 'aws sso login --profile $AWS_PROFILE' e tente de novo."
         return 1
     fi
 
@@ -105,6 +131,7 @@ bc() {
 
     CLAUDE_CONFIG_DIR="$dir" \
     CLAUDE_CODE_USE_BEDROCK=1 \
+    AWS_PROFILE="$AWS_PROFILE" \
     AWS_REGION="${AWS_REGION:-${BEDROCK_AWS_REGION:-us-east-1}}" \
     ANTHROPIC_DEFAULT_SONNET_MODEL="$BEDROCK_SONNET_ARN" \
     ANTHROPIC_DEFAULT_OPUS_MODEL="$BEDROCK_OPUS_ARN" \
