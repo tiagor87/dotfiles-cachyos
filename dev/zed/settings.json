@@ -1,4 +1,5 @@
 {
+  "base_keymap": "VSCode",
   "theme": {
     "mode": "dark",
     "dark": "DankShell Dark",
