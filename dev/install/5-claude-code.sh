@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# 5-claude-code.sh — Claude Code via Headroom (sem perfis), com opção de setup limpo.
+# 5-claude-code.sh — Claude Code (sem perfis), com opção de setup limpo.
+#
+# A função `c` sobe o claude via `ai-memory run` (dev/claude/claude.zsh); o
+# Headroom saiu do caminho do Claude Code no commit 8e56f05.
 set -uo pipefail
 source "${DOTFILES_ROOT:?}/lib/install-helpers.sh"
 
@@ -14,7 +17,7 @@ repo_install claude-code jq
 CLEAN_TARGETS=(
     "$HOME/.claude/settings.json"   # hooks + statusLine
     "$HOME/.claude/plugins"         # cache de plugins (claude-hud etc.)
-    "$HOME/.claude/hooks"           # hooks — o `headroom wrap` reinstala o do rtk
+    "$HOME/.claude/hooks"           # hooks — nada os reinstala desde a saída do `headroom wrap`
     "$HOME/.claude_profiles.json"   # perfis — conceito removido
 )
 
@@ -76,10 +79,10 @@ symlink "$HOME/.claude/CLAUDE.md" \
         "$DOTFILES_ROOT/dev/claude/CLAUDE.md" \
         "CLAUDE.md (global)"
 
-# Função `c` (Claude via Headroom) → ~/.config/claude/claude.zsh
+# Funções `c` e `bc` (Anthropic e Bedrock) → ~/.config/claude/claude.zsh
 symlink "$HOME/.config/claude/claude.zsh" \
         "$DOTFILES_ROOT/dev/claude/claude.zsh" \
-        "claude.zsh (função c)"
+        "claude.zsh (funções c e bc)"
 
 # Skills custom do repo → ~/.claude/skills/<skill> (se houver)
 if [[ -d $DOTFILES_ROOT/dev/claude/skills ]]; then
@@ -111,12 +114,13 @@ ZSHRC="$DOTFILES_ROOT/shell/zsh/.zshrc"
 if [[ -f $ZSHRC ]] && ! grep -q 'claude/claude.zsh' "$ZSHRC"; then
     {
         echo ''
-        echo '# Claude Code via Headroom (função c)'
+        echo '# Claude Code (funções c e bc)'
         echo '[[ -r ~/.config/claude/claude.zsh ]] && source ~/.config/claude/claude.zsh'
     } >>"$ZSHRC"
     pkg_status ".zshrc" "✓ source da função c" "$C_GREEN"
     log_entry dev "claude .zshrc" configured "source claude.zsh"
 fi
 
-c_info "Uso:  c            (Claude Code na pasta atual, via Headroom, janela de 1M)"
-c_info "      c --no-hr    (sem Headroom, direto na API)"
+c_info "Uso:  c            (Claude Code na pasta atual, em YOLO, via ai-memory run)"
+c_info "      bc           (idem, no Amazon Bedrock, config em ~/.claude-bedrock)"
+c_info "      claude       (sem wrapper nenhum)"

@@ -65,13 +65,9 @@ Invoke when the user's intent matches:
 - Antes de criar issue ou PR, **procurar o template e preenchê-lo**. O padrão correto é o **default da org** (`<org>/.github`, ex. `bloquo-inc/.github`) — buscar com `gh api "repos/<org>/.github/git/trees/HEAD?recursive=1"` e ler via `gh api repos/<org>/.github/contents/<path> --jq .content | base64 -d`. Template no `.github/` do próprio repo é exceção/legado: mesmo que o GitHub o faça vencer mecanicamente, seguir o da org, salvo instrução em contrário.
 - Preencher **todas** as seções e checkboxes com verdade — checkbox marcado é afirmação de que o passo foi executado. Quando um item não se aplica ou falhou, dizer explicitamente em vez de marcar.
 
-## Shell output (rtk)
-Um hook `PreToolUse` reescreve os comandos de Bash para passarem pelo `rtk`, que **filtra a saída** (`git diff` com menos contexto, `pytest`/`npm test` só com as falhas, `cat` com assinaturas em vez do corpo). Ver `@RTK.md` para os meta-comandos.
-- A saída de Bash pode estar **truncada por design** — nunca conclua "não há mais nada" a partir dela.
-- Quando a integridade importa (revisar um diff inteiro, ler um arquivo pra editar), use as tools Read/Grep ou `rtk proxy <cmd>` — nenhum dos dois passa pelo hook.
+## Shell output
+A saída dos comandos de Bash chega **inteira**: não há hook de filtragem ativo. O hook `PreToolUse` do `rtk` era instalado pelo `headroom wrap ... --rtk`, e a função `c` (`dev/claude/claude.zsh`) não passa mais pelo wrap — se um dia voltar, esta seção volta junto com o `@RTK.md`.
 
 ## Development Environment
 - Em todo projeto de desenvolvimento, **preferir Dev Containers** (`.devcontainer/`) para isolar SDKs, runtimes e dependências. Só desviar quando o projeto explicitamente exigir setup nativo.
 - Em todo projeto de desenvolvimento, **adotar SDD (Spec-Driven Development) com [SpecKit](https://github.com/github/spec-kit)**: fluxo `specify → clarify → plan → tasks → implement`, com a constitution do projeto governando os princípios.
-
-@RTK.md

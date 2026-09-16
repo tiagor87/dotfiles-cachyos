@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
-# 7-headroom.sh — Headroom (compressão de contexto) integrado ao Claude Code.
+# 7-headroom.sh — Headroom (compressão de contexto), hoje a serviço do Codex.
 #
 # Headroom NÃO é um plugin de marketplace; é um CLI que sobe um proxy local e
-# comprime o contexto das requisições. A integração fica na função `c`
-# (dev/claude/claude.zsh), que chama `headroom wrap claude --1m`.
+# comprime o contexto das requisições. Quem consome é a função `codex`
+# (dev/codex/codex.zsh), que chama `headroom wrap codex`.
 #
-# Por que `wrap` e não ANTHROPIC_BASE_URL: apontar a base URL pra um host
-# customizado dispara um gate client-side do Claude Code que desliga a janela de
-# 1M tokens (headroom#1158) e o carregamento de tools sob demanda (headroom#746).
-# O `wrap` contorna os dois; o roteamento por variável de ambiente, não.
+# O CLAUDE CODE SAIU DO WRAP no commit 8e56f05: a função `c` passou a ser
+# `ai-memory run claude --yolo` (dev/claude/claude.zsh). O headroom continua
+# instalado por causa do codex — não porque o `c` precise dele.
+#
+# Por que era `wrap` e não ANTHROPIC_BASE_URL, enquanto o Claude Code usava:
+# apontar a base URL pra um host customizado dispara um gate client-side do
+# Claude Code que desliga a janela de 1M tokens (headroom#1158) e o
+# carregamento de tools sob demanda (headroom#746). O `wrap` contorna os dois;
+# o roteamento por variável de ambiente, não.
 set -uo pipefail
 source "${DOTFILES_ROOT:?}/lib/install-helpers.sh"
 
@@ -50,8 +55,9 @@ fi
 
 # Subir o proxy NÃO é passo de setup — ele fica no ar servindo requisições, então
 # rodá-lo aqui travaria a instalação. Quem sobe (e reaproveita) é o `wrap`.
-# O RTK não precisa de instalação: com --rtk (ver dev/claude/claude.zsh), o
-# `headroom wrap` baixa o binário, symlinka em ~/.local/bin e registra o hook
-# PreToolUse em ~/.claude/settings.json sozinho.
-c_info "Integração via função 'c' → headroom wrap claude --rtk --1m"
+# O RTK era instalado de carona: com --rtk, o `headroom wrap` baixava o
+# binário, symlinkava em ~/.local/bin e registrava o hook PreToolUse em
+# ~/.claude/settings.json sozinho. Como nenhuma função daqui passa mais --rtk,
+# o hook não é mais registrado — o binário sobrevive de instalações antigas.
+c_info "Integração via função 'codex' → headroom wrap codex"
 c_info "Diagnóstico:  headroom doctor   |  economia acumulada:  headroom doctor | grep savings"
