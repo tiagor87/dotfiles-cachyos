@@ -89,6 +89,7 @@ No final, é exibido um **resumo agrupado por categoria** (instalados / atualiza
 | Dev | 11 | `dev/install/11-posting.sh` | Instala o **Posting** (AUR) — cliente de API HTTP no terminal (TUI), alternativa ao Postman/Insomnia |
 | Dev | 12 | `dev/install/12-herdr.sh` | Instala o **herdr** (AUR, `herdr-bin`) — multiplexador de terminal para agentes de código. Sem config versionado: atalhos nos defaults (prefix `ctrl+b`) |
 | Dev | 13 | `dev/install/13-zed.sh` | Instala o **Zed** (repo oficial), linka `~/.local/bin/zed → /usr/bin/zeditor` (o pacote do Arch só instala o `zeditor`; o link dá o `zed <path>`) e o `settings.json` versionado, que seleciona os temas **DankShell Dark/Light** gerados pelo matugen do DMS em `~/.config/zed/themes/dank-zed-theme.json` |
+| Dev | 14 | `dev/install/14-opencode.sh` | Instala o **OpenCode** (repo oficial) e linka o `opencode.json` versionado — provider `amazon-bedrock`, mesma conta e mesmo perfil (`bloquo-bedrock`) do `bc`. As ARNs não ficam no arquivo: são placeholders `{env:BEDROCK_ARN_*}` que o próprio opencode resolve a partir do `~/.zshenv` (substituição no texto bruto antes do parse — funciona em qualquer campo aninhado). Cobre os 5 modelos Claude do Bedrock + Grok 4.6, DeepSeek R1 e GPT-5.6 Terra |
 | Storage | 1 | `storage/install/1-windows-mounts.sh` | Monta **unidades Windows (NTFS via `ntfs3`)** escolhidas por fzf em `/mnt/<rótulo>` com `nofail` + `x-systemd.automount` (não quebra o boot/login se o disco falhar) + atalho humano `~/<rótulo>`; backup + validação do `/etc/fstab` |
 
 ---
@@ -218,11 +219,12 @@ dotfiles-cachyos/
 │   ├── zsh/.zshrc                # → ~/.zshrc
 │   └── atuin/config.toml         # → ~/.config/atuin/config.toml
 ├── dev/                          # categoria Dev
-│   ├── install/                  # 1-jetbrains-toolbox..4-runtimes 5-claude-code 6-ai-memory 7-headroom 8-claude-hud 9-beekeeper-studio 10-headroom-wrappers 11-posting 12-herdr 13-zed
+│   ├── install/                  # 1-jetbrains-toolbox..4-runtimes 5-claude-code 6-ai-memory 7-headroom 8-claude-hud 9-beekeeper-studio 10-headroom-wrappers 11-posting 12-herdr 13-zed 14-opencode
 │   ├── claude/                   # CLAUDE.md global + claude.zsh (funções `c` e `bc`) → linkados no .zshrc
 │   ├── zed/settings.json         # → ~/.config/zed/settings.json (tema DankShell do matugen)
 │   ├── codex/                    # codex.zsh (funções `codex`, `codex-fugu` em YOLO) → ~/.config/codex/
-│   └── antigravity/              # agy.zsh (função `agy` em YOLO) → ~/.config/antigravity/
+│   ├── antigravity/              # agy.zsh (função `agy` em YOLO) → ~/.config/antigravity/
+│   └── opencode/opencode.json    # → ~/.config/opencode/opencode.json (provider amazon-bedrock)
 └── storage/                      # categoria Storage
     └── install/                  # 1-windows-mounts (NTFS/ntfs3, nofail)
 ```

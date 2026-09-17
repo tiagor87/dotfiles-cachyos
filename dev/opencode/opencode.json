@@ -1,0 +1,46 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "amazon-bedrock": {
+      "options": {
+        "region": "{env:BEDROCK_AWS_REGION}",
+        "profile": "bloquo-bedrock"
+      },
+      "models": {
+        "claude-haiku-4-5-20251001": {
+          "name": "Claude Haiku 4.5",
+          "id": "{env:BEDROCK_ARN_HAIKU_4_5}"
+        },
+        "claude-sonnet-4-6": {
+          "name": "Claude Sonnet 4.6",
+          "id": "{env:BEDROCK_ARN_SONNET_4_6}"
+        },
+        "claude-sonnet-5": {
+          "name": "Claude Sonnet 5",
+          "id": "{env:BEDROCK_ARN_SONNET_5}"
+        },
+        "claude-opus-4-8": {
+          "name": "Claude Opus 4.8",
+          "id": "{env:BEDROCK_ARN_OPUS_4_8}"
+        },
+        "claude-opus-5": {
+          "name": "Claude Opus 5",
+          "id": "{env:BEDROCK_ARN_OPUS_5}"
+        },
+        "cc-grok-4-6": {
+          "name": "Grok 4.6",
+          "id": "{env:BEDROCK_ARN_GROK_4_6}",
+          "options": { "additionalModelRequestFields": { "reasoning_effort": "low" } }
+        },
+        "cc-deepseek-r1": {
+          "name": "DeepSeek R1",
+          "id": "{env:BEDROCK_ARN_DEEPSEEK_R1}"
+        },
+        "cc-gpt5-6-terra": {
+          "name": "GPT-5.6 Terra",
+          "id": "{env:BEDROCK_ARN_GPT5_6_TERRA}"
+        }
+      }
+    }
+  }
+}
