@@ -37,9 +37,30 @@
 #
 # RESSALVA: o `c` não repassa `"$@"` — `c --resume` e afins são engolidos em
 # silêncio. Está assim desde o 8e56f05, de propósito; o `bc` repassa.
+#
+# CLAUDE_LAUNCHER: as duas gravam qual delas foi usada ("c" ou "bc") nessa
+# variável, passada como prefixo de comando pro `ai-memory run claude` — não
+# um `export` solto, então não vaza pro shell interativo por conta própria,
+# só entra no ambiente do processo do claude e de tudo que ELE spawnar dali
+# pra frente (Bash tool, subagent isolado em worktree, task em background):
+# herança normal de env do Unix, sem lógica nenhuma pra manter. É pra isso que
+# serve — `echo $CLAUDE_LAUNCHER` dentro da sessão diz qual das duas a
+# originou, sem precisar inspecionar CLAUDE_CODE_USE_BEDROCK/AWS_PROFILE/etc.
+# um por um.
+#
+# NÃO HÁ REDIRECIONAMENTO AUTOMÁTICO: `c` e `bc` não leem essa variável de
+# volta pra se auto-corrigir — chamar `c` de propósito dentro de uma sessão
+# aberta via `bc` roda `c` mesmo (Anthropic direto), não uma `bc` disfarçada.
+# Silenciar isso seria mágica implícita, contra o "dumb over clever" do
+# CLAUDE.md, e quebraria justamente os testes cruzados feitos ao construir
+# este arquivo (chamar a outra de propósito, de dentro da sessão, pra
+# comparar). Pra REPLICAR o método do pai numa sub-sessão nova (script que
+# relança o claude, teste feito pela própria IA), o idioma é explícito:
+#   "${CLAUDE_LAUNCHER:-c}" [args...]
 
 c() {
-    ai-memory run claude --yolo
+    CLAUDE_LAUNCHER=c \
+        ai-memory run claude --yolo
 }
 
 # ---------------------------------------------------------------------------
@@ -56,9 +77,11 @@ c() {
 # profile carrega o número da conta AWS. Eles vêm do ~/.zshenv, que não é
 # versionado (mesma convenção do resto dos segredos — ver o .gitignore):
 #
-#   export BEDROCK_SONNET_ARN="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"
-#   export BEDROCK_OPUS_ARN="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"
-#   export BEDROCK_HAIKU_ARN="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"
+#   export BEDROCK_ARN_HAIKU_4_5="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"
+#   export BEDROCK_ARN_SONNET_4_6="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"
+#   export BEDROCK_ARN_SONNET_5="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"
+#   export BEDROCK_ARN_OPUS_4_8="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"
+#   export BEDROCK_ARN_OPUS_5="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"
 #   export BEDROCK_GUARDRAIL_ID="<id>"        # opcional (com o VERSION, liga o guardrail)
 #   export BEDROCK_GUARDRAIL_VERSION="<n>"    # opcional
 #   export BEDROCK_AWS_REGION="us-east-1"     # opcional (default us-east-1)
@@ -196,6 +219,7 @@ bc() {
     }
     print -r -- "$novo" >"$settings"
 
+    CLAUDE_LAUNCHER=bc \
     CLAUDE_CONFIG_DIR="$dir" \
     CLAUDE_CODE_USE_BEDROCK=1 \
     AWS_PROFILE="$AWS_PROFILE" \
