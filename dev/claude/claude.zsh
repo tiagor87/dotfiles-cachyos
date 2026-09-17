@@ -32,11 +32,17 @@
 # `codex` (dev/codex/codex.zsh), não pelo Claude Code.
 #
 # Uso:
-#   c   → Claude Code na pasta atual, em YOLO, no workstream do ai-memory
-#   bc  → idem, no Bedrock (ver o bloco abaixo)
+#   c                → Claude Code na pasta atual, em YOLO, no workstream do ai-memory
+#   c --no-ai-memory → idem, mas direto no claude — sem workstream, sem hooks,
+#                      sem memória. Pra quando o próprio ai-memory é suspeito
+#                      (trava, ou é o que se está depurando) e cortar mais uma
+#                      camada ajuda a isolar o problema.
+#   bc [--no-ai-memory] → idem, no Bedrock (ver o bloco abaixo)
 #
-# RESSALVA: o `c` não repassa `"$@"` — `c --resume` e afins são engolidos em
-# silêncio. Está assim desde o 8e56f05, de propósito; o `bc` repassa.
+# RESSALVA: o `c` não repassa o resto de `"$@"` — `c --resume` e afins são
+# engolidos em silêncio. Está assim desde o 8e56f05, de propósito; o `bc`
+# repassa. Isso só muda com `--no-ai-memory`: aí não tem wrapper nenhum pra
+# absorver os args, e eles vão pro claude (nas duas funções).
 #
 # CLAUDE_LAUNCHER: as duas gravam qual delas foi usada ("c" ou "bc") nessa
 # variável, passada como prefixo de comando pro `ai-memory run claude` — não
@@ -59,8 +65,25 @@
 #   "${CLAUDE_LAUNCHER:-c}" [args...]
 
 c() {
-    CLAUDE_LAUNCHER=c \
-        ai-memory run claude --yolo
+    local sem_ai_memory=0 filtrados=() a
+    for a in "$@"; do
+        if [[ $a == --no-ai-memory ]]; then
+            sem_ai_memory=1
+        else
+            filtrados+=("$a")
+        fi
+    done
+
+    local cmd
+    if (( sem_ai_memory )); then
+        # --dangerously-skip-permissions no lugar do --yolo: era o ai-memory
+        # quem fazia essa tradução, e sem ele ninguém mais faz.
+        cmd=(claude --dangerously-skip-permissions "${filtrados[@]}")
+    else
+        cmd=(ai-memory run claude --yolo)
+    fi
+
+    CLAUDE_LAUNCHER=c "${cmd[@]}"
 }
 
 # ---------------------------------------------------------------------------
@@ -131,10 +154,22 @@ c() {
 #
 # Uso:
 #   bc [args...]              → Claude Code no Bedrock, na pasta atual
+#   bc --no-ai-memory [args]  → idem, mas direto no claude — sem workstream,
+#                               sem hooks, sem memória (ver a mesma flag no
+#                               cabeçalho do `c`, logo acima)
 #   AWS_PROFILE=... bc        → troca o perfil AWS (default: bloquo-bedrock)
 #   AWS_REGION=... bc         → troca a região (sobrepõe o BEDROCK_AWS_REGION)
 #   CLAUDE_BEDROCK_DIR=... bc → troca o diretório de config
 bc() {
+    local sem_ai_memory=0 filtrados=() a
+    for a in "$@"; do
+        if [[ $a == --no-ai-memory ]]; then
+            sem_ai_memory=1
+        else
+            filtrados+=("$a")
+        fi
+    done
+
     if ! command -v jq >/dev/null 2>&1; then
         print -u2 "bc: jq ausente — precisa pra escrever o modelOverrides no settings.json."
         return 1
@@ -219,6 +254,15 @@ bc() {
     }
     print -r -- "$novo" >"$settings"
 
+    # O settings.json (modelOverrides etc.) e a credencial acima valem nos dois
+    # modos — só a camada do ai-memory (workstream/hooks/memória) é opcional.
+    local cmd
+    if (( sem_ai_memory )); then
+        cmd=(claude --dangerously-skip-permissions "${filtrados[@]}")
+    else
+        cmd=(ai-memory run claude --yolo "${filtrados[@]}")
+    fi
+
     CLAUDE_LAUNCHER=bc \
     CLAUDE_CONFIG_DIR="$dir" \
     CLAUDE_CODE_USE_BEDROCK=1 \
@@ -228,5 +272,5 @@ bc() {
     ANTHROPIC_DEFAULT_OPUS_MODEL="$BEDROCK_ARN_OPUS_5" \
     ANTHROPIC_DEFAULT_HAIKU_MODEL="$BEDROCK_ARN_HAIKU_4_5" \
     ANTHROPIC_CUSTOM_HEADERS="$headers" \
-        ai-memory run claude --yolo "$@"
+        "${cmd[@]}"
 }
