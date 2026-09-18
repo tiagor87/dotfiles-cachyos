@@ -105,8 +105,6 @@ c() {
 #   export BEDROCK_ARN_SONNET_5="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"
 #   export BEDROCK_ARN_OPUS_4_8="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"
 #   export BEDROCK_ARN_OPUS_5="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"
-#   export BEDROCK_GUARDRAIL_ID="<id>"        # opcional (com o VERSION, liga o guardrail)
-#   export BEDROCK_GUARDRAIL_VERSION="<n>"    # opcional
 #   export BEDROCK_AWS_REGION="us-east-1"     # opcional (default us-east-1)
 #
 # Por que nomes BEDROCK_* e não os ANTHROPIC_DEFAULT_*_MODEL direto: o ~/.zshenv
@@ -115,9 +113,7 @@ c() {
 # escopo de uma invocação só.
 #
 # São application-inference-profiles (ARN completo, não model id): é o que
-# carrega o guardrail e o tagging de custo do perfil. O guardrail vai em
-# ANTHROPIC_CUSTOM_HEADERS, que aceita vários headers separados por \n — daí o
-# $'...' do zsh, que é a única forma de a quebra de linha chegar real.
+# carrega o tagging de custo do perfil.
 #
 # SELEÇÃO DE MODELO POR AGENTE AUTÔNOMO/SUBAGENT: o env ANTHROPIC_DEFAULT_*_MODEL
 # só cobre o tier "default" de cada família (sonnet/opus/haiku) — um agente que
@@ -205,13 +201,6 @@ bc() {
     local dir="${CLAUDE_BEDROCK_DIR:-$HOME/.claude-bedrock}"
     [[ -d $dir ]] || mkdir -p "$dir"
 
-    # Guardrail é opt-in: sem os dois valores, roda sem header nenhum em vez de
-    # mandar um header pela metade (o Bedrock recusa a request se só um for).
-    local headers=''
-    if [[ -n $BEDROCK_GUARDRAIL_ID && -n $BEDROCK_GUARDRAIL_VERSION ]]; then
-        headers="X-Amzn-Bedrock-GuardrailIdentifier: ${BEDROCK_GUARDRAIL_ID}"$'\n'"X-Amzn-Bedrock-GuardrailVersion: ${BEDROCK_GUARDRAIL_VERSION}"
-    fi
-
     # settings.json do perfil: só as 4 chaves de seleção de modelo são
     # OWNED por esta função — sobrescritas por inteiro a cada chamada, pra não
     # sobrar alias órfão se um modelo sair da lista. Tudo o mais no arquivo
@@ -271,6 +260,5 @@ bc() {
     ANTHROPIC_DEFAULT_SONNET_MODEL="$BEDROCK_ARN_SONNET_4_6" \
     ANTHROPIC_DEFAULT_OPUS_MODEL="$BEDROCK_ARN_OPUS_5" \
     ANTHROPIC_DEFAULT_HAIKU_MODEL="$BEDROCK_ARN_HAIKU_4_5" \
-    ANTHROPIC_CUSTOM_HEADERS="$headers" \
         "${cmd[@]}"
 }
