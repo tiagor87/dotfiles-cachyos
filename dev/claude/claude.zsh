@@ -215,7 +215,7 @@ bc() {
         --arg opusdef  "$opus_default_arn" \
         '($opus55 != "") as $tem55
          | .model = $model
-         | .availableModels = ["claude-sonnet-5","claude-opus-5"] + (if $tem55 then ["claude-opus-5-5"] else [] end)
+         | .availableModels = ["opusplan","claude-sonnet-5","claude-opus-5"] + (if $tem55 then ["claude-opus-5-5"] else [] end)
          | .enforceAvailableModels = true
          | .modelOverrides = ({
              "claude-haiku-4-5-20251001": $haiku45,
