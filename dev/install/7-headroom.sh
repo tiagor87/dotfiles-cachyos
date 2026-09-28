@@ -5,8 +5,8 @@
 # comprime o contexto das requisições. Quem consome é a função `codex`
 # (dev/codex/codex.zsh), que chama `headroom wrap codex`.
 #
-# O CLAUDE CODE SAIU DO WRAP no commit 8e56f05: a função `c` passou a ser
-# `ai-memory run claude --yolo` (dev/claude/claude.zsh). O headroom continua
+# O CLAUDE CODE SAIU DO WRAP no commit 8e56f05 (e do wrapper do ai-memory
+# depois, em 2026-09-26 — dev/claude/claude.zsh). O headroom continua
 # instalado por causa do codex — não porque o `c` precise dele.
 #
 # Por que era `wrap` e não ANTHROPIC_BASE_URL, enquanto o Claude Code usava:

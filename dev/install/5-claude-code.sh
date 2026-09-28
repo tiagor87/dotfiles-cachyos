@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # 5-claude-code.sh — Claude Code (sem perfis), com opção de setup limpo.
 #
-# A função `c` sobe o claude via `ai-memory run` (dev/claude/claude.zsh); o
-# Headroom saiu do caminho do Claude Code no commit 8e56f05.
+# A função `c` sobe o claude direto, sem wrapper (dev/claude/claude.zsh); o
+# Headroom saiu do caminho do Claude Code no commit 8e56f05, e o ai-memory
+# saiu em 2026-09-26 (ver HISTÓRICO 2 no cabeçalho de claude.zsh).
 set -uo pipefail
 source "${DOTFILES_ROOT:?}/lib/install-helpers.sh"
 
@@ -121,6 +122,6 @@ if [[ -f $ZSHRC ]] && ! grep -q 'claude/claude.zsh' "$ZSHRC"; then
     log_entry dev "claude .zshrc" configured "source claude.zsh"
 fi
 
-c_info "Uso:  c            (Claude Code na pasta atual, em YOLO, via ai-memory run)"
+c_info "Uso:  c            (Claude Code na pasta atual, em YOLO)"
 c_info "      bc           (idem, no Amazon Bedrock, config em ~/.claude-bedrock)"
 c_info "      claude       (sem wrapper nenhum)"

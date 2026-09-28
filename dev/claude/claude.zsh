@@ -4,16 +4,8 @@
 # `c` roda na config 100% padrão: ~/.claude, sem perfis, sem CLAUDE_CONFIG_DIR.
 # `bc` é o único desvio disso, e usa ~/.claude-bedrock (ver o bloco lá embaixo).
 #
-# As duas lançam o Claude Code através do `ai-memory run`, que abre um
-# workstream gerenciado: os hooks de sessão gravam as observações e o MCP
-# `ai-memory` devolve essa memória pro agente. O `--yolo` é flag DO WRAPPER
-# (vira `--dangerously-skip-permissions` no claude), não do claude — o resto
-# dos NATIVE_ARGS o ai-memory repassa byte a byte, na ordem.
-#
-# O `ai-memory` vem do dev/install/6-ai-memory.sh, que também registra o MCP e
-# os hooks nos DOIS perfis (~/.claude e ~/.claude-bedrock). Sem o binário no
-# PATH as duas funções morrem em "command not found" — pra rodar sem wrapper
-# nenhum, use o `claude` direto.
+# As duas chamam `claude --dangerously-skip-permissions` direto, sem wrapper
+# nenhum — o resto de `"$@"` vai junto, na ordem.
 #
 # HISTÓRICO — até o commit 8e56f05 o `c` era `headroom wrap claude --rtk --1m
 # --code-graph --memory --learn`. Quem lê este arquivo esperando o Headroom
@@ -31,28 +23,29 @@
 # O Headroom continua instalado (dev/install/7-headroom.sh) e em uso, mas pelo
 # `codex` (dev/codex/codex.zsh), não pelo Claude Code.
 #
-# Uso:
-#   c                → Claude Code na pasta atual, em YOLO, no workstream do ai-memory
-#   c --no-ai-memory → idem, mas direto no claude — sem workstream, sem hooks,
-#                      sem memória. Pra quando o próprio ai-memory é suspeito
-#                      (trava, ou é o que se está depurando) e cortar mais uma
-#                      camada ajuda a isolar o problema.
-#   bc [--no-ai-memory] → idem, no Bedrock (ver o bloco abaixo)
+# HISTÓRICO 2 — até 2026-09-26 as duas lançavam o claude através do
+# `ai-memory run`, que abria um workstream gerenciado (hooks de ciclo de vida
+# gravando observações + MCP devolvendo memória pro agente). O `ai-memory` foi
+# removido do fluxo (dev/install/6-ai-memory.sh saiu do repo, o `uninstall`
+# do próprio binário limpou hooks/MCP de ~/.claude/settings.json e
+# ~/.claude.json nos dois perfis). O binário continua instalado no sistema
+# (não era escopo remover), só não é mais chamado daqui. Efeito colateral: o
+# `c` antes ENGOLIA o resto de `"$@"` no caminho do ai-memory (só a flag
+# `--no-ai-memory`, hoje inexistente, repassava args) — sem wrapper pra
+# absorver nada, as duas funções agora repassam `"$@"` sempre.
 #
-# RESSALVA: o `c` não repassa o resto de `"$@"` — `c --resume` e afins são
-# engolidos em silêncio. Está assim desde o 8e56f05, de propósito; o `bc`
-# repassa. Isso só muda com `--no-ai-memory`: aí não tem wrapper nenhum pra
-# absorver os args, e eles vão pro claude (nas duas funções).
+# Uso:
+#   c    [args...] → Claude Code na pasta atual, em YOLO (--dangerously-skip-permissions)
+#   bc   [args...] → idem, no Bedrock (ver o bloco abaixo)
 #
 # CLAUDE_LAUNCHER: as duas gravam qual delas foi usada ("c" ou "bc") nessa
-# variável, passada como prefixo de comando pro `ai-memory run claude` — não
-# um `export` solto, então não vaza pro shell interativo por conta própria,
-# só entra no ambiente do processo do claude e de tudo que ELE spawnar dali
-# pra frente (Bash tool, subagent isolado em worktree, task em background):
-# herança normal de env do Unix, sem lógica nenhuma pra manter. É pra isso que
-# serve — `echo $CLAUDE_LAUNCHER` dentro da sessão diz qual das duas a
-# originou, sem precisar inspecionar CLAUDE_CODE_USE_BEDROCK/AWS_PROFILE/etc.
-# um por um.
+# variável, passada como prefixo de comando pro `claude` — não um `export`
+# solto, então não vaza pro shell interativo por conta própria, só entra no
+# ambiente do processo do claude e de tudo que ELE spawnar dali pra frente
+# (Bash tool, subagent isolado em worktree, task em background): herança
+# normal de env do Unix, sem lógica nenhuma pra manter. É pra isso que serve —
+# `echo $CLAUDE_LAUNCHER` dentro da sessão diz qual das duas a originou, sem
+# precisar inspecionar CLAUDE_CODE_USE_BEDROCK/AWS_PROFILE/etc. um por um.
 #
 # NÃO HÁ REDIRECIONAMENTO AUTOMÁTICO: `c` e `bc` não leem essa variável de
 # volta pra se auto-corrigir — chamar `c` de propósito dentro de uma sessão
@@ -65,25 +58,7 @@
 #   "${CLAUDE_LAUNCHER:-c}" [args...]
 
 c() {
-    local sem_ai_memory=0 filtrados=() a
-    for a in "$@"; do
-        if [[ $a == --no-ai-memory ]]; then
-            sem_ai_memory=1
-        else
-            filtrados+=("$a")
-        fi
-    done
-
-    local cmd
-    if (( sem_ai_memory )); then
-        # --dangerously-skip-permissions no lugar do --yolo: era o ai-memory
-        # quem fazia essa tradução, e sem ele ninguém mais faz.
-        cmd=(claude --dangerously-skip-permissions "${filtrados[@]}")
-    else
-        cmd=(ai-memory run claude --yolo)
-    fi
-
-    CLAUDE_LAUNCHER=c "${cmd[@]}"
+    CLAUDE_LAUNCHER=c claude --dangerously-skip-permissions "$@"
 }
 
 # ---------------------------------------------------------------------------
@@ -101,11 +76,16 @@ c() {
 # versionado (mesma convenção do resto dos segredos — ver o .gitignore):
 #
 #   export BEDROCK_ARN_HAIKU_4_5="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"
-#   export BEDROCK_ARN_SONNET_4_6="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"
 #   export BEDROCK_ARN_SONNET_5="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"
-#   export BEDROCK_ARN_OPUS_4_8="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"
 #   export BEDROCK_ARN_OPUS_5="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"
+#   export BEDROCK_ARN_OPUS_5_5="arn:aws:bedrock:<região>:<conta>:application-inference-profile/<id>"  # opcional
 #   export BEDROCK_AWS_REGION="us-east-1"     # opcional (default us-east-1)
+#
+# BEDROCK_ARN_SONNET_4_6 e BEDROCK_ARN_OPUS_4_8 continuam existindo no
+# ~/.zshenv (o OpenCode ainda os usa — dev/opencode/opencode.json), mas o `bc`
+# não lê mais nenhum dos dois: só Sonnet 5, Opus 5 e, se presente, Opus 5.5.
+# Motivo do corte: eram opções demais pro dia a dia e geravam escolha errada
+# de modelo com frequência — ver histórico de conversa de 2026-09-28.
 #
 # Por que nomes BEDROCK_* e não os ANTHROPIC_DEFAULT_*_MODEL direto: o ~/.zshenv
 # exporta pra TODO shell, e o Claude Code lê os ANTHROPIC_DEFAULT_* mesmo fora
@@ -114,6 +94,15 @@ c() {
 #
 # São application-inference-profiles (ARN completo, não model id): é o que
 # carrega o tagging de custo do perfil.
+#
+# MODELO PADRÃO — "opusplan": Opus no modo de planejamento (plan mode),
+# Sonnet 5 no resto (execução). É um alias real do próprio Claude Code (o
+# perfil `c`/Anthropic direto usa o mesmo valor em ~/.claude/settings.json).
+# No Bedrock, pra esse alias alternar de verdade entre os dois modelos, o
+# `modelOverrides` PRECISA ter as chaves genéricas "opus" e "sonnet" (não só
+# os ids exatos tipo "claude-sonnet-5") apontando pros ARNs — sem isso o
+# opusplan trava só no Opus. Opus 5.5 é o padrão do tier "opus" quando o ARN
+# existir (BEDROCK_ARN_OPUS_5_5 setado); cai pro Opus 5 quando não existir.
 #
 # SELEÇÃO DE MODELO POR AGENTE AUTÔNOMO/SUBAGENT: o env ANTHROPIC_DEFAULT_*_MODEL
 # só cobre o tier "default" de cada família (sonnet/opus/haiku) — um agente que
@@ -125,8 +114,13 @@ c() {
 # escolha só nos modelos com ARN configurado — nada de um agente escolher algo
 # sem tradução possível. `bc` escreve essas quatro chaves (model,
 # availableModels, enforceAvailableModels, modelOverrides) no settings.json do
-# perfil a cada execução, via jq, preservando o resto do arquivo (os hooks que
-# o dev/install/6-ai-memory.sh registrou ali).
+# perfil a cada execução, via jq, preservando o resto do arquivo.
+#
+# HAIKU FICA DE FORA do availableModels (não aparece no /model), mas o ARN
+# continua obrigatório e mapeado em modelOverrides + ANTHROPIC_DEFAULT_HAIKU_MODEL:
+# o Claude Code chama Haiku internamente (título de conversa, tarefas rápidas)
+# independente do que o usuário escolhe, e sem a tradução pro ARN cai no mesmo
+# bug 403 documentado abaixo — só não precisa ser uma opção selecionável.
 #
 # Credencial: vem do AWS CLI do ambiente (env, ~/.aws/credentials, SSO). Sem
 # AWS_PROFILE setado, e como não existe perfil `default` neste `~/.aws/config`,
@@ -135,8 +129,8 @@ c() {
 # por vários segundos antes de desistir. Isso já aconteceu e parecia "falha de
 # comunicação com a API": não era a API, era a resolução de credencial nunca
 # terminando. Por isso o default abaixo, e por isso o preflight com timeout —
-# falhar em ~8s com mensagem clara bate de longe ficar pendurado no meio do
-# `ai-memory run`.
+# falhar em ~8s com mensagem clara bate de longe ficar pendurado no meio da
+# subida do claude.
 #
 # NÃO usa `awsCredentialExport` (o comando `aws configure export-credentials`
 # do settings.json de exemplo): esse mecanismo só roda depois de um trust-check
@@ -150,22 +144,10 @@ c() {
 #
 # Uso:
 #   bc [args...]              → Claude Code no Bedrock, na pasta atual
-#   bc --no-ai-memory [args]  → idem, mas direto no claude — sem workstream,
-#                               sem hooks, sem memória (ver a mesma flag no
-#                               cabeçalho do `c`, logo acima)
 #   AWS_PROFILE=... bc        → troca o perfil AWS (default: bloquo-bedrock)
 #   AWS_REGION=... bc         → troca a região (sobrepõe o BEDROCK_AWS_REGION)
 #   CLAUDE_BEDROCK_DIR=... bc → troca o diretório de config
 bc() {
-    local sem_ai_memory=0 filtrados=() a
-    for a in "$@"; do
-        if [[ $a == --no-ai-memory ]]; then
-            sem_ai_memory=1
-        else
-            filtrados+=("$a")
-        fi
-    done
-
     if ! command -v jq >/dev/null 2>&1; then
         print -u2 "bc: jq ausente — precisa pra escrever o modelOverrides no settings.json."
         return 1
@@ -173,7 +155,7 @@ bc() {
 
     local faltando=()
     local v
-    for v in BEDROCK_ARN_HAIKU_4_5 BEDROCK_ARN_SONNET_4_6 BEDROCK_ARN_SONNET_5 BEDROCK_ARN_OPUS_4_8 BEDROCK_ARN_OPUS_5; do
+    for v in BEDROCK_ARN_HAIKU_4_5 BEDROCK_ARN_SONNET_5 BEDROCK_ARN_OPUS_5; do
         [[ -n ${(P)v} ]] || faltando+=("$v")
     done
     if (( ${#faltando} )); then
@@ -181,6 +163,9 @@ bc() {
         print -u2 "bc: veja o cabeçalho de ~/.config/claude/claude.zsh para o formato."
         return 1
     fi
+    # BEDROCK_ARN_OPUS_5_5 é opcional: se existir, vira o padrão do tier
+    # "opus" (opusplan) e uma opção extra no /model; se não, cai pro Opus 5.
+    local opus_default_arn="${BEDROCK_ARN_OPUS_5_5:-$BEDROCK_ARN_OPUS_5}"
 
     # `local`, não `export`: só vale pra esta invocação. Exportar mudaria o
     # shell interativo pra sempre — todo `aws` digitado depois do `bc` herdaria
@@ -204,7 +189,7 @@ bc() {
     # settings.json do perfil: só as 4 chaves de seleção de modelo são
     # OWNED por esta função — sobrescritas por inteiro a cada chamada, pra não
     # sobrar alias órfão se um modelo sair da lista. Tudo o mais no arquivo
-    # (hoje, os hooks do ai-memory) passa direto.
+    # passa direto.
     #
     # AS CHAVES TÊM QUE SER O MODEL ID EXATO DO CATÁLOGO DO CLAUDE CODE, não um
     # nome "bonito" qualquer — testado e caiu em DOIS jeitos de quebrar: com
@@ -222,43 +207,35 @@ bc() {
     [[ -f $settings ]] && existing=$(cat "$settings")
     local novo
     novo=$(jq \
-        --arg model "claude-sonnet-4-6" \
+        --arg model    "opusplan" \
         --arg haiku45  "$BEDROCK_ARN_HAIKU_4_5" \
-        --arg sonnet46 "$BEDROCK_ARN_SONNET_4_6" \
         --arg sonnet5  "$BEDROCK_ARN_SONNET_5" \
-        --arg opus48   "$BEDROCK_ARN_OPUS_4_8" \
         --arg opus5    "$BEDROCK_ARN_OPUS_5" \
-        '.model = $model
-         | .availableModels = ["claude-haiku-4-5-20251001","claude-sonnet-4-6","claude-sonnet-5","claude-opus-4-8","claude-opus-5"]
+        --arg opus55   "$BEDROCK_ARN_OPUS_5_5" \
+        --arg opusdef  "$opus_default_arn" \
+        '($opus55 != "") as $tem55
+         | .model = $model
+         | .availableModels = ["claude-sonnet-5","claude-opus-5"] + (if $tem55 then ["claude-opus-5-5"] else [] end)
          | .enforceAvailableModels = true
-         | .modelOverrides = {
+         | .modelOverrides = ({
              "claude-haiku-4-5-20251001": $haiku45,
-             "claude-sonnet-4-6": $sonnet46,
              "claude-sonnet-5": $sonnet5,
-             "claude-opus-4-8": $opus48,
-             "claude-opus-5": $opus5
-           }' <<<"$existing") || {
+             "claude-opus-5": $opus5,
+             "opus": $opusdef,
+             "sonnet": $sonnet5
+           } + (if $tem55 then {"claude-opus-5-5": $opus55} else {} end))' <<<"$existing") || {
         print -u2 "bc: jq falhou montando $settings — settings.json existente pode estar com JSON inválido."
         return 1
     }
     print -r -- "$novo" >"$settings"
-
-    # O settings.json (modelOverrides etc.) e a credencial acima valem nos dois
-    # modos — só a camada do ai-memory (workstream/hooks/memória) é opcional.
-    local cmd
-    if (( sem_ai_memory )); then
-        cmd=(claude --dangerously-skip-permissions "${filtrados[@]}")
-    else
-        cmd=(ai-memory run claude --yolo "${filtrados[@]}")
-    fi
 
     CLAUDE_LAUNCHER=bc \
     CLAUDE_CONFIG_DIR="$dir" \
     CLAUDE_CODE_USE_BEDROCK=1 \
     AWS_PROFILE="$AWS_PROFILE" \
     AWS_REGION="${AWS_REGION:-${BEDROCK_AWS_REGION:-us-east-1}}" \
-    ANTHROPIC_DEFAULT_SONNET_MODEL="$BEDROCK_ARN_SONNET_4_6" \
-    ANTHROPIC_DEFAULT_OPUS_MODEL="$BEDROCK_ARN_OPUS_5" \
+    ANTHROPIC_DEFAULT_SONNET_MODEL="$BEDROCK_ARN_SONNET_5" \
+    ANTHROPIC_DEFAULT_OPUS_MODEL="$opus_default_arn" \
     ANTHROPIC_DEFAULT_HAIKU_MODEL="$BEDROCK_ARN_HAIKU_4_5" \
-        "${cmd[@]}"
+        claude --dangerously-skip-permissions "$@"
 }
