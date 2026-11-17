@@ -1,5 +1,5 @@
 #%PAM-1.0
-# dankshell-face — stack de auth do lock do DMS: senha + rosto (Howdy).
+# dankshell-face — stack de auth do lock do DMS: senha + rosto (Gaze).
 #
 # Instalado em /etc/pam.d/dankshell-face pelo desktop/install/11-face-unlock.sh
 # e apontado pelo "lockPamPath" do settings.json.
@@ -9,22 +9,22 @@
 # lá é apagada no próximo sync. A alternativa (lockPamExternallyManaged=true)
 # faria o DMS suprimir a digital no lock (Pam.qml: fprintSuppressedByPrimaryPam).
 #
-# ORDEM: senha ANTES do rosto, e workaround=off. Não é gosto — é o que o
-# `man 8 pam_howdy` prescreve na seção "Lock Screens That Collect Input Before
-# PAM". O lock do DMS é desse tipo: o PAM só começa quando você aperta Enter
-# (LockScreenContent.qml — onAccepted → pam.passwd.start()), então a senha já
-# chega pronta. Com o Howdy na frente, ele brigaria por um prompt que não existe.
+# ORDEM: senha ANTES do rosto. O lock do DMS coleta a senha antes do PAM: o PAM
+# só começa quando você aperta Enter (LockScreenContent.qml — onAccepted →
+# pam.passwd.start()), então a senha já chega pronta e o pam_unix a consome.
 #
 # Consequência prática: o rosto no lock NÃO é hands-free. O fluxo é apertar
-# Enter com o campo vazio (o pam_unix falha) e aí o Howdy roda e destrava.
+# Enter com o campo vazio (o pam_unix falha) e aí o Gaze roda e destrava.
 # A digital, essa sim, é contínua — o DMS fala com o fprintd por D-Bus
 # (enableFprint), fora do PAM, e por isso o lockPamInlineFprint fica false.
 #
-# Se os dois primeiros falham, o `include system-auth` fecha o stack: ele traz o
-# pam_faillock (proteção contra força bruta) e termina em [default=die]. O
-# pam_unix roda de novo lá, mas sem novo prompt — o try_first_pass reusa o token.
+# O faillock preauth vai PRIMEIRO: pam_gaze é sufficient e um sucesso pula o
+# resto do stack, inclusive o pam_faillock — sem o gate, uma conta travada ainda
+# destravaria pelo rosto. Se os dois primeiros falham, o `include system-auth`
+# fecha o stack (faillock authfail, [default=die]).
+-auth      requisite   pam_faillock.so preauth
 auth       sufficient  pam_unix.so try_first_pass nullok
-auth       sufficient  pam_howdy.so workaround=off
+auth       sufficient  pam_gaze.so
 auth       include     system-auth
 account    include     system-auth
 password   include     system-auth

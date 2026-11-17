@@ -71,3 +71,6 @@ A saída dos comandos de Bash chega **inteira**: não há hook de filtragem ativ
 ## Development Environment
 - Em todo projeto de desenvolvimento, **preferir Dev Containers** (`.devcontainer/`) para isolar SDKs, runtimes e dependências. Só desviar quando o projeto explicitamente exigir setup nativo.
 - Em todo projeto de desenvolvimento, **adotar SDD (Spec-Driven Development) com [SpecKit](https://github.com/github/spec-kit)**: fluxo `specify → clarify → plan → tasks → implement`, com a constitution do projeto governando os princípios.
+# graphify
+- **graphify** (`~/.claude/skills/graphify/SKILL.md`) - any input to knowledge graph. Trigger: `/graphify`
+When the user types `/graphify`, use the installed graphify skill or instructions before doing anything else.

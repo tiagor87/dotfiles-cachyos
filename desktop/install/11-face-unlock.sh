@@ -1,35 +1,36 @@
 #!/usr/bin/env bash
-# 11-face-unlock.sh — Reconhecimento facial por infravermelho (Howdy), se houver câmera IR
+# 11-face-unlock.sh — Reconhecimento facial por infravermelho (Gaze), se houver câmera IR
 #
-# Detecta a câmera IR pelos nós v4l2 do sysfs (sem depender do v4l-utils). Se existir:
-#   - instala o howdy-next (reescrita em C++ do Howdy; o howdy clássico puxa
-#     python-dlib, compilação longa e frágil),
-#   - baixa os modelos (ONNX), aponta o config.ini para o nó IR,
-#   - mede se o emissor IR realmente acende (sem ele o Howdy só vê preto),
-#   - ajusta o max_height para a resolução nativa do sensor,
-#   - cadastra QUANTOS MODELOS você quiser, em ciclo (um por condição: sem
-#     óculos, de óculos, luz diferente), testando cada um na hora,
-#   - valida com `howdy test` que o reconhecimento REALMENTE funciona.
-# Por default para aí: NÃO toca em nenhum stack de autenticação. O rosto no
-# sudo/lock/greeter é opt-in por variável de ambiente (ver passo 8), e só sai do
-# lugar se o `howdy test` tiver passado.
+# Gaze: https://github.com/GunduLabs/gaze (substitui o Howdy). Detecta a câmera IR
+# pelos nós v4l2 do sysfs (sem depender do v4l-utils). Se existir:
+#   - migra do Howdy: tira os blocos "dotfiles howdy" do PAM ANTES de qualquer
+#     outra coisa (um pam_howdy.so órfão num stack é bagunça na autenticação),
+#   - instala o gaze-bin (AUR; traz o daemon gazed, o CLI e o pam_gaze.so) e liga
+#     o gazed. O pós-install do pacote já põe o rosto no sudo e no polkit-1,
+#   - aponta o Gaze para o nó IR (rgb = "" → só IR, como o Howdy fazia),
+#   - mede se o emissor IR realmente acende (sem ele o Gaze só vê preto),
+#   - cadastra rostos em ciclo (um por condição: sem óculos, de óculos, luz
+#     diferente), testando cada um na hora,
+#   - valida com `gaze auth` que o reconhecimento REALMENTE funciona.
+# Por default para aí: NÃO toca no greeter nem no lock. O rosto no login/lock é
+# opt-in por variável de ambiente (ver passo 7), e só sai do lugar se o
+# `gaze auth` tiver passado.
 # Em máquina sem câmera IR (ex.: desktop), sai sem alterar nada. Idempotente.
 #
 # ATENÇÃO ao que o rosto NÃO faz: no lock do DMS ele não é hands-free. O DMS só
 # inicia o PAM quando você aperta Enter (LockScreenContent.qml → onAccepted →
 # pam.passwd.start()), então o fluxo é Enter com o campo vazio e AÍ o rosto roda.
 # Quem destrava olhando/tocando de forma contínua é a digital, que o DMS conduz
-# por D-Bus, fora do PAM. Ver o desktop/pam/dankshell-face para a ordem do stack.
+# por D-Bus, fora do PAM. Mesma coisa no greeter. Ver o desktop/pam/dankshell-face.
 #
 # GREEN (critério de sucesso):
-#   - Run default: a validação do passo 7 fica ✓ E
-#     `grep -rl pam_howdy /etc/pam.d/` não retorna nada (nada foi tocado).
-#   - Mais de um modelo: `sudo howdy -U $USER list` mostra uma linha por modelo,
-#     e o reconhecimento funciona nas duas condições (com e sem óculos).
-#   - Com DOTFILES_FACE_PAM=1: `sudo -k && sudo true` libera pelo rosto, e a
-#     senha continua funcionando quando o rosto falha (ESPERE o prompt aparecer
-#     antes de digitar — o workaround=native suprime o prompt enquanto escaneia).
-# Se o teste falhar com imagem preta, o emissor IR não está ligado: veja o passo 5.
+#   - Run default: `gaze auth` fica ✓ E `grep -l pam_howdy /etc/pam.d/*` não
+#     retorna nada E `grep -c pam_gaze /etc/pam.d/sudo` ≥ 1 (pós-install do pacote).
+#   - Com DOTFILES_FACE_LOCK=1 / DOTFILES_FACE_GREETER=1: o lock e o greetd
+#     passam a ter pam_gaze, e `gaze doctor` não reclama do PAM.
+#   - `sudo -k && sudo true` libera pelo rosto, e a senha continua funcionando
+#     quando o rosto falha.
+# Se o teste falhar com imagem preta, o emissor IR não está ligado: veja o passo 4.
 set -uo pipefail
 
 # Os outros scripts do repo exigem DOTFILES_ROOT do setup.sh (${VAR:?}). Este é
@@ -41,18 +42,18 @@ source "${DOTFILES_ROOT:?}/lib/install-helpers.sh"
 
 # Mesma guarda do setup.sh, repetida aqui porque este script é chamado DIRETO
 # (por causa das flags DOTFILES_FACE_*), fora do pipeline. Como root, o $USER
-# seria 'root': o `howdy add` cadastraria o rosto do root e o sudo do seu usuário
-# continuaria sem reconhecer ninguém — falha silenciosa e confusa de achar.
+# seria 'root': o `gaze add-face` cadastraria o rosto do root e o sudo do seu
+# usuário continuaria sem reconhecer ninguém — falha silenciosa e confusa de achar.
 if [[ ${EUID} -eq 0 ]]; then
     c_err "Não rode como root. Rode como seu usuário — ele usa sudo só onde precisa."
     c_err "Como root, o rosto seria cadastrado para 'root', não para você."
     return 1 2>/dev/null || exit 1
 fi
 
-SETTINGS="$HOME/.config/DankMaterialShell/settings.json"
-HOWDY_CONF=/etc/howdy/config.ini
+GAZE_CONF=/etc/gaze/config.toml
 LOCK_PAM=/etc/pam.d/dankshell-face
 LOCK_PAM_SRC="$DOTFILES_ROOT/desktop/pam/dankshell-face"
+BAK_SUFFIX=.bak-dotfiles-gaze
 
 # ---------------------------------------------------------------------------
 # 1) Há câmera IR? O sysfs expõe o nome de cada nó v4l2 sem precisar do
@@ -94,9 +95,10 @@ pkg_status "câmera infravermelha" "✓ $ir_dev ($ir_name)" "$C_GREEN"
 log_entry face camera configured "$ir_dev — $ir_name"
 
 # O número em /dev/videoN NÃO é estável entre boots/re-enumeração do USB — se a
-# webcam RGB e a IR trocarem, o Howdy passa a olhar pela câmera errada. O
-# config.ini do próprio Howdy recomenda /dev/v4l/by-path/*. Trocamos pelo link
-# estável quando existe (aqui a by-id não serve: ela só cobre os nós da RGB).
+# webcam RGB e a IR trocarem, o teste do emissor olharia a câmera errada. Para
+# os testes de v4l2 usamos o link estável /dev/v4l/by-path/* quando existe (a
+# by-id não serve: ela só cobre os nós da RGB). O Gaze, esse, é apontado pelo
+# USB VID:PID no passo 3 (ver lá).
 ir_capture="$ir_dev"
 for link in /dev/v4l/by-path/*-video-index0; do
     [[ -e $link ]] || continue
@@ -118,7 +120,7 @@ fi
 #     Por que isto existe: cada invocação de sudo que chega ao PAM sem conseguir
 #     autenticar grava uma TENTATIVA FALHA no pam_faillock, mesmo sem NENHUMA
 #     senha digitada. Este script chama sudo várias vezes (aur_install e
-#     repo_install fazem `sudo -v`, mais os `sudo howdy ...`), então um único run
+#     repo_install fazem `sudo -v`, mais os `sudo systemctl ...`), então um único run
 #     sem TTY soma 3 falhas e TRAVA A CONTA por 10 min (deny=3). Medido em
 #     2026-07-31: um run sem TTY = exatamente 3 falhas, zero senhas.
 #
@@ -132,103 +134,125 @@ if ! sudo -n true 2>/dev/null && [[ ! -t 0 || ! -t 1 ]]; then
     return 1 2>/dev/null || exit 1
 fi
 
-# ---------------------------------------------------------------------------
-# 2) howdy-next (AUR). O pacote traz o pam_howdy.so e o CLI 'howdy'.
-# ---------------------------------------------------------------------------
-aur_install howdy-next
 
-if ! command -v howdy >/dev/null 2>&1; then
-    c_err "CLI 'howdy' não encontrado após a instalação — parei aqui."
-    log_entry face howdy failed "howdy-next não instalou o CLI"
+# ---------------------------------------------------------------------------
+# 2) Migração do Howdy + instalação do Gaze.
+#
+#    2a) Tira os blocos "dotfiles howdy" do PAM antes de tudo. Se o Howdy for
+#        desinstalado com a linha ainda lá, o pam_howdy.so some do stack e todo
+#        login passa a logar erro de módulo. O .bak-dotfiles-face do passo
+#        antigo (se existir) é o arquivo ORIGINAL de antes do Howdy — não é
+#        tocado; o backup desta migração tem sufixo próprio.
+# ---------------------------------------------------------------------------
+strip_howdy_pam() {
+    local pam="$1" bak="$1$BAK_SUFFIX"
+    sudo grep -q 'pam_howdy\.so' "$pam" 2>/dev/null || return 0
+    sudo cp -an "$pam" "$bak" || {
+        pkg_status "howdy: sai do $pam" "✗ backup falhou (abortei)" "$C_RED"
+        log_entry face howdy-strip failed "backup de $pam falhou"
+        return 1
+    }
+    sudo sed -i '/^# >>> dotfiles howdy/,/^# <<< dotfiles howdy/d' "$pam"
+    if sudo grep -q 'pam_howdy\.so' "$pam"; then
+        # Linha fora do bloco marcado: não adivinho, devolvo o original.
+        sudo cp -a "$bak" "$pam"
+        pkg_status "howdy: sai do $pam" "✗ pam_howdy fora do bloco marcado (restaurei)" "$C_RED"
+        log_entry face howdy-strip failed "pam_howdy em $pam fora do bloco dotfiles — edite à mão"
+        return 1
+    fi
+    pkg_status "howdy: sai do $pam" "✓ removido (backup: $bak)" "$C_GREEN"
+    log_entry face howdy-strip configured "bloco howdy removido de $pam"
+}
+for pam in /etc/pam.d/sudo /etc/pam.d/greetd /etc/pam.d/dankshell-face; do
+    strip_howdy_pam "$pam" || exit 1
+done
+
+# 2b) Gaze. O pós-install do AUR faz sozinho: gazed habilitado, rosto no sudo
+#     (com faillock preauth antes) e override do polkit-1.
+aur_install gaze-bin
+
+if ! command -v gaze >/dev/null 2>&1; then
+    c_err "CLI 'gaze' não encontrado após a instalação — parei aqui."
+    log_entry face gaze failed "gaze-bin não instalou o CLI"
     return 0 2>/dev/null || exit 0
 fi
 
-# ---------------------------------------------------------------------------
-# 3) Modelos do reconhecimento (baixados do HuggingFace, download único). São
-#    ONNX e vão para /usr/share/howdy/models — que o pacote instala VAZIO.
-#    (/etc/howdy/models é outra coisa: os rostos cadastrados, e é root-only.)
-# ---------------------------------------------------------------------------
-if find /usr/share/howdy/models -name '*.onnx' -print -quit 2>/dev/null | grep -q .; then
-    pkg_status "howdy: modelos" "= já baixados" "$C_DIM"
-    log_entry face models skipped "*.onnx já em /usr/share/howdy/models"
-elif sudo howdy download-models; then
-    pkg_status "howdy: modelos" "✓ baixados" "$C_GREEN"
-    log_entry face models installed "howdy download-models"
+if systemctl is-active --quiet gazed; then
+    pkg_status "gaze: daemon" "= gazed ativo" "$C_DIM"
+    log_entry face gazed skipped "gazed já ativo"
+elif sudo systemctl enable --now gazed; then
+    pkg_status "gaze: daemon" "✓ gazed habilitado e iniciado" "$C_GREEN"
+    log_entry face gazed configured "systemctl enable --now gazed"
 else
-    pkg_status "howdy: modelos" "✗ download falhou" "$C_RED"
-    log_entry face models failed "howdy download-models"
+    pkg_status "gaze: daemon" "✗ gazed não subiu (journalctl -u gazed)" "$C_RED"
+    log_entry face gazed failed "enable --now gazed"
 fi
 
 # ---------------------------------------------------------------------------
-# 4) Aponta o Howdy para o nó IR. Só reescreve a chave se ela JÁ existir — não
-#    inventamos schema de config.ini (varia entre o Howdy 2.x e o next 3.x).
-# ---------------------------------------------------------------------------
-#    Cuidado ao reportar: 'sudo test -f' falha tanto quando o arquivo não existe
-#    quanto quando o sudo não autentica (ex.: rodado sem TTY). Distinguimos os
-#    dois, senão a mensagem manda caçar o problema errado.
+# 3) Aponta o Gaze para o nó IR e desliga o RGB.
 #
-#    E cuidado DOBRADO com como se testa isso: um `sudo -v` sem TTY conta como
-#    TENTATIVA FALHA no pam_faillock, mesmo sem nenhuma senha digitada. Três
-#    execuções assim travam a conta por 10 min (medido: 2026-07-31 13:37:11/13/16
-#    foram três runs de teste, zero senhas). Então só checamos o cache com
-#    `sudo -n` (não autentica, não conta) e exigimos TTY antes de deixar o sudo
-#    pedir senha.
-if ! sudo -n true 2>/dev/null && [[ ! -t 0 || ! -t 1 ]]; then
-    pkg_status "howdy: device_path" "✗ sudo indisponível (rode num terminal real)" "$C_RED"
-    log_entry face device-path failed "sem credencial em cache e sem TTY p/ pedir senha"
-elif ! sudo test -f "$HOWDY_CONF"; then
-    pkg_status "howdy: device_path" "✗ $HOWDY_CONF ausente" "$C_RED"
-    log_entry face device-path failed "$HOWDY_CONF não existe"
-elif sudo grep -qE "^[[:space:]]*device_path[[:space:]]*=[[:space:]]*$ir_dev[[:space:]]*$" "$HOWDY_CONF"; then
-    pkg_status "howdy: device_path" "= já é $ir_dev" "$C_DIM"
-    log_entry face device-path skipped "$ir_dev"
-elif sudo grep -qE "^[[:space:]]*device_path[[:space:]]*=" "$HOWDY_CONF"; then
-    if sudo sed -i -E "s|^([[:space:]]*device_path[[:space:]]*=[[:space:]]*).*|\1$ir_dev|" "$HOWDY_CONF"; then
-        pkg_status "howdy: device_path" "✓ $ir_dev" "$C_GREEN"
-        log_entry face device-path configured "device_path=$ir_dev"
-    else
-        pkg_status "howdy: device_path" "✗ falhou" "$C_RED"
-        log_entry face device-path failed "sed em $HOWDY_CONF"
-    fi
-else
-    pkg_status "howdy: device_path" "✗ chave ausente (rode 'sudo howdy config')" "$C_RED"
-    log_entry face device-path failed "device_path não está em $HOWDY_CONF"
-fi
+#    rgb = "" → só IR, que é o que o Howdy fazia e o que o Gaze recomenda quando
+#    a webcam não aguenta RGB+IR juntos. O IR vai por USB VID:PID, não por
+#    /dev/videoN: o número muda entre boots e o `usb:` resolve sempre pro nó
+#    mono/IR da vez. Se o `gaze auth` não achar a câmera, o plano B é
+#    `ir = "$ir_capture"` (nó fixo) no $GAZE_CONF.
+#
+#    Só mexe nas chaves do [cameras]; nada além disso. Backup único do original.
+# ---------------------------------------------------------------------------
+ir_usb=$(udevadm info -q property -n "$ir_capture" 2>/dev/null | awk -F= '
+    /^ID_VENDOR_ID=/ {v=$2} /^ID_MODEL_ID=/ {m=$2}
+    END { if (v && m) print "usb:" v ":" m }')
 
-# 4b) max_height na resolução NATIVA do sensor. O default do Howdy é 320, que
-#     reduz a imagem; dar todos os pixels ao detector ajudou aqui com óculos
-#     (sensor 640x400 → 400). Lemos do v4l2 em vez de fixar um número, e só
-#     aumentamos — se o valor no config já for >= nativo, não mexemos.
-if command -v v4l2-ctl >/dev/null 2>&1 && sudo test -f "$HOWDY_CONF"; then
-    native_h=$(v4l2-ctl -d "$ir_capture" --list-framesizes=GREY 2>/dev/null \
-               | grep -oP 'Size: Discrete \d+x\K\d+' | sort -n | tail -1)
-    [[ -z $native_h ]] && native_h=$(v4l2-ctl -d "$ir_capture" --get-fmt-video 2>/dev/null \
-               | grep -oP 'Width/Height\s*:\s*[0-9]+/\K[0-9]+')
-    cur_h=$(sudo grep -oP '^[[:space:]]*max_height[[:space:]]*=[[:space:]]*\K[0-9]+' "$HOWDY_CONF" | head -1)
-    if [[ ! $native_h =~ ^[0-9]+$ || -z $cur_h ]]; then
-        pkg_status "howdy: max_height" "= não determinei a altura nativa" "$C_DIM"
-        log_entry face max-height skipped "native='$native_h' cur='$cur_h'"
-    elif (( cur_h >= native_h )); then
-        pkg_status "howdy: max_height" "= já é $cur_h (nativo: $native_h)" "$C_DIM"
-        log_entry face max-height skipped "$cur_h >= $native_h"
-    elif sudo sed -i -E "s|^([[:space:]]*max_height[[:space:]]*=[[:space:]]*).*|\1$native_h|" "$HOWDY_CONF"; then
-        pkg_status "howdy: max_height" "✓ $cur_h → $native_h (nativo)" "$C_GREEN"
-        log_entry face max-height configured "max_height=$native_h"
+# set_toml_key <arquivo> <seção> <chave> <valor-toml> — troca a linha da chave
+# (ativa ou comentada) dentro da seção; se não existir, acrescenta no fim dela.
+set_toml_key() {
+    local file="$1" sec="$2" key="$3" val="$4" tmp
+    tmp=$(mktemp)
+    sudo awk -v sec="[$sec]" -v key="$key" -v val="$val" '
+        function flush() { if (insec && !done) { print key " = " val; done = 1 } }
+        /^\[/ { flush(); insec = ($0 == sec) }
+        insec && !done && $0 ~ "^#?[[:space:]]*" key "[[:space:]]*=" { print key " = " val; done = 1; next }
+        { print }
+        END { flush(); if (!done) exit 3 }
+    ' "$file" >"$tmp"
+    local rc=$?
+    if [[ $rc -ne 0 || ! -s $tmp ]]; then rm -f "$tmp"; return 1; fi
+    sudo install -m 644 "$tmp" "$file"; rc=$?
+    rm -f "$tmp"; return $rc
+}
+
+if [[ -z $ir_usb ]]; then
+    pkg_status "gaze: câmera" "✗ sem VID:PID do $ir_capture (udevadm)" "$C_RED"
+    log_entry face camera-config failed "udevadm sem ID_VENDOR_ID/ID_MODEL_ID"
+elif ! sudo test -f "$GAZE_CONF"; then
+    pkg_status "gaze: câmera" "✗ $GAZE_CONF ausente" "$C_RED"
+    log_entry face camera-config failed "$GAZE_CONF não existe"
+elif sudo grep -qE "^ir[[:space:]]*=[[:space:]]*\"$ir_usb\"" "$GAZE_CONF" \
+     && sudo grep -qE '^rgb[[:space:]]*=[[:space:]]*""' "$GAZE_CONF"; then
+    pkg_status "gaze: câmera" "= já é $ir_usb (só IR)" "$C_DIM"
+    log_entry face camera-config skipped "$ir_usb"
+else
+    sudo cp -an "$GAZE_CONF" "$GAZE_CONF$BAK_SUFFIX"
+    if set_toml_key "$GAZE_CONF" cameras rgb '""' \
+       && set_toml_key "$GAZE_CONF" cameras ir "\"$ir_usb\""; then
+        sudo systemctl restart gazed
+        pkg_status "gaze: câmera" "✓ ir=$ir_usb, rgb vazio (só IR)" "$C_GREEN"
+        log_entry face camera-config configured "ir=$ir_usb rgb=\"\""
     else
-        pkg_status "howdy: max_height" "✗ falhou" "$C_RED"
-        log_entry face max-height failed "sed em $HOWDY_CONF"
+        pkg_status "gaze: câmera" "✗ falhou ao editar $GAZE_CONF" "$C_RED"
+        log_entry face camera-config failed "set_toml_key em $GAZE_CONF"
     fi
 fi
 
 # ---------------------------------------------------------------------------
-# 5) O emissor IR acende? Em muitos notes ele fica desligado e o Howdy só vê
+# (passo 4) O emissor IR acende? Em muitos notes ele fica desligado e o Gaze só vê
 #    preto — daí NÃO adianta cadastrar rosto. Medimos em vez de supor: captura
 #    15 quadros e olha a média do mais claro. Escuro é ~0/255, iluminado passa
 #    de 30, então 8 é um corte folgado.
 #
 #    Muita câmera IR INTERCALA quadros iluminados e escuros (o emissor pisca):
-#    no Zenbook S 14 os pares dão média ~40 e os ímpares ~0. É normal — o Howdy
-#    descarta os escuros pelo 'dark_threshold'. Por isso olhamos o MAIS CLARO.
+#    no Zenbook S 14 os pares dão média ~40 e os ímpares ~0. É normal — o Gaze
+#    descarta os escuros sozinho. Por isso olhamos o MAIS CLARO.
 #
 #    Quando o emissor não acende, o conserto é o linux-enable-ir-emitter, mas
 #    não o instalamos: a 6.1.2 não compila com opencv 5 (o meson dela pede
@@ -244,7 +268,7 @@ repo_install v4l-utils
 #     camera): bloqueada, a câmera ENTREGA os 15 quadros normalmente, só que
 #     preenchidos com um valor CONSTANTE — min=max=144. Média 144 passava
 #     folgado no corte de 8 do teste abaixo, então o script dizia "✓ emissor IR
-#     acende" para uma câmera cega, e a falha só reaparecia no `howdy test`, sem
+#     acende" para uma câmera cega, e a falha só reaparecia no `gaze auth`, sem
 #     pista nenhuma. Sem imagem, threshold nenhum resolve.
 if command -v v4l2-ctl >/dev/null 2>&1; then
     privacy=$(timeout 10 v4l2-ctl -d "$ir_dev" --get-ctrl privacy 2>/dev/null \
@@ -298,16 +322,10 @@ print(int(sum(f) / fs), max(f) - min(f))
         elif [[ $bright =~ ^[0-9]+$ ]] && (( bright >= 8 )); then
             pkg_status "emissor IR" "✓ acende (quadro mais claro: média $bright/255)" "$C_GREEN"
             log_entry face ir-emitter configured "quadro mais claro: média $bright/255"
-            # NÃO sugerir mexer no dark_threshold aqui. A chave não é "média
-            # mínima": o config.ini diz "skip frames whose darkest histogram bin
-            # exceeds this %", default 75. Medido nesta câmera: quadros
-            # iluminados ficam em 0–46% no bin mais escuro e os do strobe em
-            # 91–100% — ou seja, o default já separa os dois corretamente.
-            # Se algum dia precisar afrouxar, o movimento é AUMENTAR, não baixar.
         else
             pkg_status "emissor IR" "✗ só quadros escuros (média ${bright:-?}/255)" "$C_RED"
             log_entry face ir-emitter failed "emissor apagado — média ${bright:-?}/255"
-            c_warn "O Howdy não vai enxergar nada assim. Ligue o emissor com o linux-enable-ir-emitter"
+            c_warn "O Gaze não vai enxergar nada assim. Ligue o emissor com o linux-enable-ir-emitter"
             c_warn "(atenção: a 6.1.2 não compila com opencv 5 — o meson dela exige opencv4)."
         fi
     else
@@ -317,173 +335,176 @@ print(int(sum(f) / fs), max(f) - min(f))
     rm -f "$frames"
 fi
 
-# ---------------------------------------------------------------------------
-# 6) Cadastro + validação, EM CICLO. Um modelo por condição.
-#
-#    O Howdy compara contra TODOS os modelos do usuário, então cadastrar mais de
-#    um é ganho puro — não afrouxa limiar nenhum. Aprendido na prática
-#    (2026-07-31): com um único modelo o reconhecimento DE ÓCULOS ficou ruim; um
-#    segundo modelo usando óculos resolveu sem tocar no yunet_score_threshold
-#    nem no sface_threshold, que continuam nos defaults.
-#
-#    Cada modelo é validado na hora com `howdy test` (feedback curto: cadastrou,
-#    testou, viu o resultado) e no fim rodamos a validação que serve de portão
-#    para o passo 8. Sem validação verde, nada de PAM.
-# ---------------------------------------------------------------------------
-count_models() {
-    sudo howdy -U "$USER" --plain list 2>/dev/null | grep -cE '^[[:space:]]*[0-9]+'
-}
 
-# test_face <rótulo> → 0 se reconheceu. O timeout é rede de segurança: o
-# `timeout` do config.ini já limita o scan, mas se a câmera travar não queremos
-# pendurar o setup.
-FACE_LOG="${TMPDIR:-/tmp}/dotfiles-howdy-test.log"
+# ---------------------------------------------------------------------------
+# 5) Cadastro + validação, EM CICLO. Um rosto por condição.
+#
+#    O Gaze compara contra os rostos cadastrados do usuário (config.toml,
+#    [enrollment] max_templates), então cadastrar um por condição — sem óculos,
+#    de óculos — é ganho puro, sem afrouxar limiar. Cada um é validado na hora
+#    com `gaze auth` (feedback curto: cadastrou, testou, viu o resultado) e no
+#    fim rodamos a validação que serve de portão para o passo 7.
+# ---------------------------------------------------------------------------
+# test_face <rótulo> → 0 se reconheceu. O timeout é rede de segurança: se a
+# câmera travar não queremos pendurar o setup.
+#
+# --silent, NÃO --verbose: o verbose desenha um TUI (precisa de terminal de
+# verdade) e, com a saída redirecionada pro log, morre com "No such device or
+# address" / "cursor position could not be read" ANTES de olhar a câmera —
+# o teste falhava com o Gaze funcionando. O diagnóstico vem do journal do gazed.
+FACE_LOG="${TMPDIR:-/tmp}/dotfiles-gaze-auth.log"
 test_face() {
     local label="$1"
-    if timeout 30 sudo howdy -U "$USER" test >"$FACE_LOG" 2>&1; then
+    if timeout 30 gaze auth --silent >"$FACE_LOG" 2>&1; then
         pkg_status "$label" "✓ reconheceu" "$C_GREEN"
         return 0
     fi
     pkg_status "$label" "✗ não reconheceu" "$C_RED"
-    # A saída do howdy é o ÚNICO diagnóstico útil aqui, e antes ia toda pro
-    # /dev/null: sobrava um "✗" sem nada pra investigar nem pra reportar.
-    # Qual etapa falhou muda o conserto — "no face detected" é detecção
-    # (yunet_score_threshold), "unknown face" é reconhecimento (outro modelo).
-    # Warnings do OpenCV 5 sobre 'setPreferableTarget'/'graph engine' são ruído:
-    # ele ignora o target e roda na CPU, o teste não falha por causa disso.
-    c_warn "Saída do 'howdy test' (íntegra em $FACE_LOG):"
-    tail -n 15 "$FACE_LOG" 2>/dev/null | sed 's/^/    /'
+    c_warn "Últimas linhas do gazed (o motivo da recusa — rosto, liveness, câmera):"
+    journalctl -u gazed -b --no-pager -n 8 2>/dev/null | cut -c1-220 | sed 's/^/    /'
+    c_warn "Diagnóstico completo (câmera, daemon, PAM, TPM):  gaze doctor"
     return 1
 }
 
-models=$(count_models)
-if [[ -z $models ]]; then models=0; fi
-
+# Rostos já cadastrados: `gaze list-faces` sai 0 também sem nenhum, então quem
+# decide "tem rosto" é o gate abaixo (gaze auth), não esta contagem — ela só
+# serve para a mensagem.
 if [[ ! -t 0 || ! -t 1 ]]; then
     pkg_status "rosto: cadastro" "= pulado (sem TTY)" "$C_DIM"
-    log_entry face enroll skipped "sem TTY — rode 'sudo howdy -U $USER add'"
+    log_entry face enroll skipped "sem TTY — rode 'gaze add-face default'"
 else
-    c_info "Cadastre um modelo POR CONDIÇÃO: um sem óculos, um de óculos, e"
+    c_info "Cadastre um rosto POR CONDIÇÃO: um sem óculos, um de óculos, e"
     c_info "outro se você usa a máquina com iluminação bem diferente."
-    [[ $models -gt 0 ]] && c_info "Já existem $models modelo(s) cadastrado(s)."
+    c_info "Já cadastrados:"; gaze list-faces 2>&1 | sed 's/^/    /'
 
+    first=1
     while true; do
-        if [[ $models -eq 0 ]]; then
-            printf 'Cadastrar um modelo de rosto agora? [S/n]: '
+        if [[ $first -eq 1 ]]; then
+            printf 'Cadastrar um rosto agora? [S/n]: '
             read -r ans
             [[ $ans =~ ^[nN]$ ]] && break
+            first=0
         else
-            printf 'Cadastrar OUTRO modelo (ex.: de óculos)? [s/N]: '
+            printf 'Cadastrar OUTRO rosto (ex.: de óculos)? [s/N]: '
             read -r ans
             [[ $ans =~ ^[sSyY]$ ]] || break
         fi
 
+        printf 'Nome deste cadastro (ex.: default, oculos) [default]: '
+        read -r face_name
+        face_name=${face_name:-default}
+        if [[ ! $face_name =~ ^[[:alnum:]_.-]+$ ]]; then
+            c_warn "Nome inválido (use letras, números, _ . -). Tente de novo."
+            continue
+        fi
+
         c_info "Olhe para a câmera, rosto iluminado, na condição que quer cadastrar."
-        if sudo howdy -U "$USER" add; then
-            models=$(count_models)
-            pkg_status "rosto: cadastro" "✓ modelo #$((models-1)) (total: $models)" "$C_GREEN"
-            log_entry face enroll configured "modelo $models via howdy add"
-            # Valida ESTE modelo na hora, na mesma condição em que foi cadastrado.
-            test_face "rosto: teste do modelo #$((models-1))" \
-                || c_warn "Recadastre nessa condição, ou tente inclinar levemente a cabeça."
+        if gaze add-face "$face_name"; then
+            pkg_status "rosto: cadastro" "✓ '$face_name'" "$C_GREEN"
+            log_entry face enroll configured "gaze add-face $face_name"
+            test_face "rosto: teste de '$face_name'" \
+                || c_warn "Recadastre nessa condição (gaze refine-face $face_name junta amostras)."
         else
             pkg_status "rosto: cadastro" "✗ falhou" "$C_RED"
-            log_entry face enroll failed "howdy add (emissor IR? câmera em uso?)"
+            log_entry face enroll failed "gaze add-face $face_name (câmera em uso? gazed ativo?)"
             break
         fi
     done
 fi
 
 # ---------------------------------------------------------------------------
-# 7) VALIDAÇÃO — o portão para o passo 8.
+# 6) VALIDAÇÃO — o portão para o passo 7.
 #
-#    Aprendido do jeito difícil (2026-07-31): uma versão anterior escrevia o
-#    pam_howdy no /etc/pam.d/sudo e no greetd apenas perguntando "quer?", sem
-#    nunca provar que o Howdy reconhecia — e sem NENHUM modelo cadastrado. O
-#    pam_howdy com workaround=native SUPRIME o prompt de senha enquanto escaneia
-#    (timeout do config.ini, default 4s); quem digita nesse intervalo tem os
-#    primeiros caracteres engolidos → senha errada. Três dessas e o pam_faillock
-#    (defaults deny=3, unlock_time=600) TRAVA A CONTA — e aí toda autenticação
-#    que passa por system-auth recusa até a senha correta, no sudo, no polkit e
-#    no lock. Emissor IR aceso (passo 5) NÃO prova reconhecimento: é o
-#    `howdy test` que prova.
+#    Aprendido do jeito difícil (2026-07-31, ainda com o Howdy): uma versão
+#    anterior escrevia o módulo de rosto no PAM apenas perguntando "quer?", sem
+#    nunca provar que ele reconhecia. Falha de rosto + senha digitada no meio do
+#    scan = senha errada; três dessas e o pam_faillock (deny=3, unlock_time=600)
+#    TRAVA A CONTA — e aí toda autenticação que passa por system-auth recusa,
+#    no sudo, no polkit e no lock. Emissor IR aceso (passo 4) NÃO prova
+#    reconhecimento: é o `gaze auth` que prova.
 # ---------------------------------------------------------------------------
 face_ok=0
-models=$(count_models)
-if [[ ${models:-0} -eq 0 ]]; then
-    pkg_status "validação (howdy test)" "= sem modelo cadastrado" "$C_DIM"
-    log_entry face verify skipped "nenhum modelo cadastrado"
-elif test_face "validação (howdy test)"; then
+if test_face "validação (gaze auth)"; then
     face_ok=1
-    log_entry face verify configured "howdy test ok com $models modelo(s)"
+    log_entry face verify configured "gaze auth ok"
 else
     # Uma falha pode ser só a posição/luz do momento. Retestar aqui é bem mais
-    # curto que reabrir o script, que refaria os passos 1-6 inteiros.
+    # curto que reabrir o script, que refaria os passos 1-5 inteiros.
     while [[ -t 0 && -t 1 ]]; do
         printf 'Testar de novo? [s/N]: '
         read -r ans
         [[ $ans =~ ^[sSyY]$ ]] || break
-        test_face "validação (howdy test)" || continue
+        test_face "validação (gaze auth)" || continue
         face_ok=1
-        log_entry face verify configured "howdy test ok com $models modelo(s) (após reteste)"
+        log_entry face verify configured "gaze auth ok (após reteste)"
         break
     done
 fi
 
-if [[ ${models:-0} -gt 0 && $face_ok -ne 1 ]]; then
-    log_entry face verify failed "howdy test falhou — PAM não será tocado ($(tail -n1 "$FACE_LOG" 2>/dev/null))"
-    c_warn "Sem reconhecimento comprovado eu NÃO mexo em PAM nenhum."
-    c_warn "Para diagnosticar qual etapa falha, ligue os avisos e reteste:"
-    c_warn "  sudo sed -i 's/^detection_notice.*/detection_notice = true/;" \
-            "s/^end_report.*/end_report = true/' $HOWDY_CONF"
-    c_warn "  sudo howdy -U $USER snapshot   # veja o que a câmera IR enxerga"
-    c_warn "'não detectou' → baixe yunet_score_threshold; 'não reconheceu' →"
-    c_warn "cadastre outro modelo NESSA condição (preferível a baixar sface_threshold)."
+if [[ $face_ok -ne 1 ]]; then
+    log_entry face verify failed "gaze auth falhou — greeter/lock não serão tocados ($(tail -n1 "$FACE_LOG" 2>/dev/null))"
+    c_warn "Sem reconhecimento comprovado eu NÃO mexo em PAM nenhum além do que o"
+    c_warn "pacote já fez no sudo/polkit. Diagnóstico:  gaze doctor"
+    c_warn "Se o sudo ficou pedindo rosto sem funcionar, tire a linha dele:"
+    c_warn "  sudo sed -i '/pam_gaze/d; /^-auth requisite pam_faillock\\.so preauth\$/d' /etc/pam.d/sudo"
+fi
+
+# 6b) Howdy fora, mas só com o Gaze provado: o Howdy é o plano B até aqui.
+#     --noconfirm NÃO: apaga também /etc/howdy (os rostos cadastrados), então
+#     pergunta.
+if [[ $face_ok -eq 1 ]] && pacman -Qq howdy-next >/dev/null 2>&1; then
+    if [[ -t 0 && -t 1 ]]; then
+        printf 'Gaze funcionando. Desinstalar o howdy-next (apaga /etc/howdy, com os rostos antigos)? [s/N]: '
+        read -r ans
+        if [[ $ans =~ ^[sSyY]$ ]]; then
+            if sudo pacman -Rns howdy-next; then
+                pkg_status "howdy-next" "✓ desinstalado" "$C_GREEN"
+                log_entry face howdy-remove configured "pacman -Rns howdy-next"
+            else
+                pkg_status "howdy-next" "✗ pacman -Rns falhou" "$C_RED"
+                log_entry face howdy-remove failed "pacman -Rns howdy-next"
+            fi
+        else
+            pkg_status "howdy-next" "= mantido (desinstale: sudo pacman -Rns howdy-next)" "$C_DIM"
+            log_entry face howdy-remove skipped "recusado pelo usuário"
+        fi
+    else
+        pkg_status "howdy-next" "= mantido (sem TTY)" "$C_DIM"
+        log_entry face howdy-remove skipped "sem TTY"
+    fi
 fi
 
 # ---------------------------------------------------------------------------
-# 8) Integração no PAM — OPT-IN EXPLÍCITO, nunca por prompt.
+# 7) Integração no PAM do que o pacote NÃO faz — OPT-IN EXPLÍCITO.
 #
-#    Escrever em stack de autenticação é o passo que pode te deixar de fora da
-#    máquina, então ele exige as DUAS coisas: reconhecimento provado no passo 7
-#    e a variável DOTFILES_FACE_PAM=1. O greeter (login!) tem flag própria.
+#    O pós-install do gaze-bin já cuida do sudo e do polkit-1 (e respeita
+#    /etc/gaze/pam-sudo.optout). Aqui só o que ele não toca, uma flag por
+#    superfície, e exigindo o `gaze auth` verde do passo 6:
 #
-#      DOTFILES_FACE_PAM=1     → rosto no sudo (a integração que tem ganho real)
-#      DOTFILES_FACE_LOCK=1    → TAMBÉM instala o stack do lock (dankshell-face)
-#      DOTFILES_FACE_GREETER=1 → TAMBÉM no greetd (login). Cuidado.
+#      DOTFILES_FACE_LOCK=1    → instala o stack do lock (dankshell-face)
+#      DOTFILES_FACE_GREETER=1 → rosto no greetd (login). Cuidado.
 #
-#    Uma flag por superfície, e não um pacote só: quem quer rosto no sudo não
-#    necessariamente quer no lock (onde não é hands-free) ou no login.
+#    Todo arquivo tocado ganha $BAK_SUFFIX antes da edição.
 #
-#    Todo arquivo tocado ganha .bak-dotfiles-face antes da edição.
+#    Por que o faillock preauth entra antes do pam_gaze: sufficient + sucesso
+#    pula o resto do stack, inclusive o pam_faillock. Sem o gate, uma conta
+#    TRAVADA ainda autenticaria pelo rosto. (Mesma regra do pós-install.)
 # ---------------------------------------------------------------------------
-MODULE=$(find /usr/lib -name 'pam_howdy.so' 2>/dev/null | head -1)
-
-# insert_howdy_pam <arquivo-pam> <label> <chave-de-log>
-# Insere o bloco marcado do Howdy, com backup antes e rollback se o arquivo sair
-# malformado. Ancora DEPOIS da digital quando ela existe (fator mais forte e mais
-# rápido primeiro); senão no topo do stack.
-insert_howdy_pam() {
-    local pam="$1" label="$2" key="$3" anchor tmp bak
-    if sudo grep -q 'pam_howdy\.so' "$pam" 2>/dev/null; then
+# insert_gaze_pam <arquivo> <label> <chave-de-log> <regex-da-âncora>
+# Insere [gate faillock +] pam_gaze ANTES da linha-âncora, com backup e rollback.
+insert_gaze_pam() {
+    local pam="$1" label="$2" key="$3" anchor="$4" tmp bak="$1$BAK_SUFFIX"
+    if sudo grep -q 'pam_gaze\.so' "$pam" 2>/dev/null; then
         pkg_status "$label" "= já presente" "$C_DIM"
-        log_entry face "$key" skipped "pam_howdy já em $pam"
+        log_entry face "$key" skipped "pam_gaze já em $pam"
         return
     fi
-    if sudo grep -q '^# <<< dotfiles fprintd' "$pam" 2>/dev/null; then
-        anchor='^# <<< dotfiles fprintd'
-    elif sudo grep -q '^# END DMS GREETER AUTH' "$pam" 2>/dev/null; then
-        anchor='^# END DMS GREETER AUTH'
-    elif sudo grep -q '^#%PAM-1.0' "$pam" 2>/dev/null; then
-        anchor='^#%PAM-1.0'
-    else
-        pkg_status "$label" "✗ sem âncora conhecida em $pam" "$C_RED"
-        log_entry face "$key" failed "nem #%PAM-1.0 nem blocos conhecidos em $pam"
+    if ! sudo grep -qE "$anchor" "$pam" 2>/dev/null; then
+        pkg_status "$label" "✗ sem âncora ($anchor) em $pam" "$C_RED"
+        log_entry face "$key" failed "âncora $anchor ausente em $pam"
         return
     fi
-
-    bak="$pam.bak-dotfiles-face"
-    sudo cp -a "$pam" "$bak" || {
+    sudo cp -an "$pam" "$bak" || {
         pkg_status "$label" "✗ não consegui fazer backup (abortei)" "$C_RED"
         log_entry face "$key" failed "backup de $pam falhou"
         return
@@ -491,34 +512,26 @@ insert_howdy_pam() {
 
     tmp=$(mktemp)
     sudo cat "$pam" | awk -v a="$anchor" '
-        { print }
         $0 ~ a && !ins {
-            print "# >>> dotfiles howdy — rosto antes da senha (fallback automático)"
-            print "auth       sufficient pam_howdy.so workaround=native"
-            print "# <<< dotfiles howdy"
+            print "# >>> dotfiles gaze — rosto antes da senha (fallback automático)"
+            print "-auth      requisite   pam_faillock.so preauth"
+            print "auth       sufficient  pam_gaze.so"
+            print "# <<< dotfiles gaze"
             ins = 1
         }
+        { print }
         END { if (!ins) exit 3 }
     ' >"$tmp"
-    if [[ $? -ne 0 || ! -s $tmp ]]; then
-        pkg_status "$label" "✗ falhou ao gerar (arquivo inalterado)" "$C_RED"
-        log_entry face "$key" failed "awk não achou a âncora em $pam"
-        rm -f "$tmp"; return
-    fi
-
-    # Sanidade mínima antes de instalar: o bloco entrou e o stack não encurtou.
-    if [[ $(grep -c . "$tmp") -lt $(sudo grep -c . "$pam") ]] \
-       || ! grep -q 'pam_howdy\.so' "$tmp"; then
-        pkg_status "$label" "✗ resultado suspeito (descartado)" "$C_RED"
-        log_entry face "$key" failed "saída do awk não passou na sanidade"
+    if [[ $? -ne 0 || ! -s $tmp ]] || ! grep -q 'pam_gaze\.so' "$tmp" \
+       || [[ $(grep -c . "$tmp") -lt $(sudo grep -c . "$pam") ]]; then
+        pkg_status "$label" "✗ resultado suspeito (arquivo inalterado)" "$C_RED"
+        log_entry face "$key" failed "saída do awk não passou na sanidade em $pam"
         rm -f "$tmp"; return
     fi
 
     if sudo cp "$tmp" "$pam"; then
         pkg_status "$label" "✓ habilitado (backup: $bak)" "$C_GREEN"
-        log_entry face "$key" configured "pam_howdy sufficient em $pam"
-        # Rollback na tela, não escondido num comentário: se a autenticação
-        # quebrar, você já vai estar sem sudo para descobrir o comando.
+        log_entry face "$key" configured "pam_gaze sufficient em $pam"
         c_info "Se der problema, desfaça com (pkexec funciona sem sudo):"
         c_info "  pkexec cp -a $bak $pam"
         c_info "E se a conta travar por 3 falhas: : > /run/faillock/$USER"
@@ -530,26 +543,28 @@ insert_howdy_pam() {
     rm -f "$tmp"
 }
 
-if [[ ${DOTFILES_FACE_PAM:-0} != 1 ]]; then
-    pkg_status "rosto no PAM" "= opt-in (DOTFILES_FACE_PAM=1)" "$C_DIM"
-    log_entry face pam skipped "DOTFILES_FACE_PAM != 1"
-    c_info "Rosto no PAM é opt-in. Com o 'howdy test' passando, rode:"
-    c_info "  DOTFILES_FACE_PAM=1 bash $DOTFILES_ROOT/desktop/install/11-face-unlock.sh"
-elif [[ $face_ok -ne 1 ]]; then
-    pkg_status "rosto no PAM" "= bloqueado (howdy test não passou)" "$C_DIM"
-    log_entry face pam skipped "howdy test não passou — PAM intocado"
-elif [[ -z $MODULE ]]; then
-    c_warn "pam_howdy.so não encontrado — pulei a integração no PAM."
-    log_entry face pam skipped "pam_howdy.so ausente"
+# Confere o que o pacote fez no sudo/polkit — não edita, só reporta.
+for pam in /etc/pam.d/sudo /etc/pam.d/polkit-1; do
+    if sudo grep -q 'pam_gaze\.so' "$pam" 2>/dev/null; then
+        pkg_status "rosto: ${pam##*/}" "✓ pam_gaze presente" "$C_GREEN"
+    elif [[ -e /etc/gaze/pam-sudo.optout && $pam == */sudo ]]; then
+        pkg_status "rosto: ${pam##*/}" "= opt-out (/etc/gaze/pam-sudo.optout)" "$C_DIM"
+    else
+        pkg_status "rosto: ${pam##*/}" "✗ sem pam_gaze (veja: gaze doctor)" "$C_RED"
+        log_entry face "${pam##*/}-pam" failed "pam_gaze ausente em $pam após o pós-install"
+    fi
+done
+
+if [[ $face_ok -ne 1 ]]; then
+    pkg_status "rosto no lock/greeter" "= bloqueado (gaze auth não passou)" "$C_DIM"
+    log_entry face pam skipped "gaze auth não passou — lock/greeter intocados"
 else
     c_warn "Vou editar stacks de autenticação. Se algo der errado: o pam_faillock"
     c_warn "trava a conta em 3 falhas (10 min). Caminhos limpos de recuperação:"
     c_warn "  pkexec (polkit-1), 'su', e TTY via Ctrl+Alt+F2 (login) — não os toco."
-    c_warn "Ao testar o sudo, ESPERE o prompt aparecer antes de digitar."
 
-    # 8a) Stack do lock do DMS — flag própria. Arquivo separado: o
-    #     /etc/pam.d/dankshell é gerado pelo `dms auth sync` e sobrescreveria
-    #     qualquer linha nossa.
+    # 7a) Stack do lock do DMS — arquivo separado: o /etc/pam.d/dankshell é
+    #     gerado pelo `dms auth sync` e sobrescreveria qualquer linha nossa.
     if [[ ${DOTFILES_FACE_LOCK:-0} != 1 ]]; then
         pkg_status "lock: PAM do rosto" "= opt-in (DOTFILES_FACE_LOCK=1)" "$C_DIM"
         log_entry face lock-pam skipped "DOTFILES_FACE_LOCK != 1"
@@ -565,15 +580,16 @@ else
         log_entry face lock-pam failed "dms auth validate recusou — $LOCK_PAM removido"
     fi
 
-    # 8b) sudo. Howdy ANTES do system-auth: é o que o man 8 pam_howdy prescreve
-    #     para serviços que chamam o PAM antes de coletar a senha. Depois não
-    #     funciona — o system-auth do Arch termina em [default=die] no authfail,
-    #     então senha errada mata o stack antes de chegar aqui.
-    insert_howdy_pam /etc/pam.d/sudo "sudo: rosto (PAM)" sudo-pam
-
-    # 8c) greeter (login) — flag separada, porque errar aqui custa o login.
+    # 7b) greeter (login) — flag separada, porque errar aqui custa o login.
+    #     Âncora: ANTES do `auth include system-local-login`, depois do pam_nologin
+    #     (requisite) e do fprintd do DMS: mantém bloqueio de /etc/nologin e a
+    #     digital primeiro. O gnome-keyring do greetd fica como está: login por
+    #     rosto não entrega senha, então o keyring pede a senha uma vez no
+    #     desktop (igual à digital). Destravar via TPM é opcional — ver
+    #     https://gaze.gundulabs.com/guide/greetd
     if [[ ${DOTFILES_FACE_GREETER:-0} == 1 ]]; then
-        insert_howdy_pam /etc/pam.d/greetd "greeter: rosto (PAM)" greeter-pam
+        insert_gaze_pam /etc/pam.d/greetd "greeter: rosto (PAM)" greeter-pam \
+            '^auth[[:space:]]+include[[:space:]]+system-local-login'
     else
         pkg_status "greeter: rosto (PAM)" "= opt-in (DOTFILES_FACE_GREETER=1)" "$C_DIM"
         log_entry face greeter-pam skipped "DOTFILES_FACE_GREETER != 1"
